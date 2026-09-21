@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --quirona-bg: #DAD6BB;
+  --quirona-yellow: #FFDD48;
+  --quirona-burgundy: #661716;
+  --quirona-cream: #FFECB9;
+}
+
+body {
+  background-color: var(--quirona-bg);
+  color: var(--quirona-burgundy);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Selección de texto personalizada con la paleta */
+::selection {
+  background-color: var(--quirona-yellow);
+  color: var(--quirona-burgundy);
+}
+
+/* Scrollbar retro con la paleta de Quirona */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--quirona-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--quirona-burgundy);
+  border-radius: 5px;
+  border: 2px solid var(--quirona-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4a0f0e;
+}
+
+/* Efectos retro y bordes */
+.retro-border {
+  border: 2px solid #661716;
+}
+
+.retro-border-thick {
+  border: 3px solid #661716;
+}
+
+.retro-shadow {
+  box-shadow: 4px 4px 0px 0px #661716;
+}
+
+.retro-shadow-sm {
+  box-shadow: 2px 2px 0px 0px #661716;
+}
+
+.retro-shadow-lg {
+  box-shadow: 6px 6px 0px 0px #661716;
+}
+
+.retro-shadow-yellow {
+  box-shadow: 4px 4px 0px 0px #FFDD48;
+}
+
+/* Animaciones suaves para transiciones de botones */
+.retro-btn {
+  transition: all 0.15s ease-in-out;
+}
+
+.retro-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px #661716;
+}
+
+.retro-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px 0px #661716;
+}

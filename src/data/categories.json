@@ -1,0 +1,30 @@
+[
+  {
+    "id": "ropa",
+    "name": "Ropa",
+    "slug": "ropa",
+    "description": "Sudaderas, franelas oversize y prendas con corte cómodo y retro.",
+    "hasMeasurements": true
+  },
+  {
+    "id": "accesorios",
+    "name": "Accesorios",
+    "slug": "accesorios",
+    "description": "Gorras, pines, stickers y complementos vintage.",
+    "hasMeasurements": false
+  },
+  {
+    "id": "bolsos",
+    "name": "Bolsos & Totes",
+    "slug": "bolsos",
+    "description": "Tote bags de lona y bolsos con diseños exclusivos Quirona.",
+    "hasMeasurements": false
+  },
+  {
+    "id": "calzado",
+    "name": "Calzado",
+    "slug": "calzado",
+    "description": "Sneakers y calzado urbano con estética pop.",
+    "hasMeasurements": false
+  }
+]

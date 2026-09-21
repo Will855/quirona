@@ -1,0 +1,153 @@
+[
+  {
+    "id": "qn-01",
+    "name": "Camiseta Oversize \"Starry Vibe\"",
+    "slug": "camiseta-oversize-starry-vibe",
+    "description": "Camiseta corte boxy oversize en algodón peinado de 240gsm. Estampado serigráfico de la estrella Quirona en la espalda con tacto cero y cuello grueso acanalado.",
+    "category": "ropa",
+    "basePriceUSD": 24,
+    "originalPriceUSD": 28,
+    "images": [
+      "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=800&auto=format&fit=crop"
+    ],
+    "isNew": true,
+    "isBestSeller": true,
+    "featured": true,
+    "material": "100% Algodón Peinado Pesado (240 GSM)",
+    "careInstructions": "Lavar a máquina en frío con colores similares. No usar secadora.",
+    "variants": [
+      { "id": "v-01-s-yel", "size": "S", "colorName": "Amarillo Estrella", "colorHex": "#FFDD48", "stock": 5, "sku": "QRN-TS-YEL-S" },
+      { "id": "v-01-m-yel", "size": "M", "colorName": "Amarillo Estrella", "colorHex": "#FFDD48", "stock": 8, "sku": "QRN-TS-YEL-M" },
+      { "id": "v-01-l-yel", "size": "L", "colorName": "Amarillo Estrella", "colorHex": "#FFDD48", "stock": 4, "sku": "QRN-TS-YEL-L" },
+      { "id": "v-01-s-crm", "size": "S", "colorName": "Crema Mantequilla", "colorHex": "#FFECB9", "stock": 3, "sku": "QRN-TS-CRM-S" },
+      { "id": "v-01-m-crm", "size": "M", "colorName": "Crema Mantequilla", "colorHex": "#FFECB9", "stock": 6, "sku": "QRN-TS-CRM-M" },
+      { "id": "v-01-l-crm", "size": "L", "colorName": "Crema Mantequilla", "colorHex": "#FFECB9", "stock": 0, "sku": "QRN-TS-CRM-L" }
+    ],
+    "measurements": [
+      { "size": "S", "chest": "110", "waist": "110", "hip": "110", "length": "71" },
+      { "size": "M", "chest": "116", "waist": "116", "hip": "116", "length": "74" },
+      { "size": "L", "chest": "122", "waist": "122", "hip": "122", "length": "77" },
+      { "size": "XL", "chest": "128", "waist": "128", "hip": "128", "length": "80" }
+    ]
+  },
+  {
+    "id": "qn-02",
+    "name": "Sudadera Hoodie Retro Burgundy",
+    "slug": "sudadera-hoodie-retro-burgundy",
+    "description": "Hoodie con capucha forrada, felpa interior ultra suave de 380gsm y bordado tipográfico frontal en relieve con el color crema oficial.",
+    "category": "ropa",
+    "basePriceUSD": 45,
+    "originalPriceUSD": 52,
+    "images": [
+      "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=800&auto=format&fit=crop"
+    ],
+    "isNew": true,
+    "isBestSeller": true,
+    "featured": true,
+    "material": "80% Algodón Fleece, 20% Poliéster Antipilling",
+    "careInstructions": "Lavar al revés con agua fría.",
+    "variants": [
+      { "id": "v-02-s-bur", "size": "S", "colorName": "Borgoña Profundo", "colorHex": "#661716", "stock": 4, "sku": "QRN-HD-BUR-S" },
+      { "id": "v-02-m-bur", "size": "M", "colorName": "Borgoña Profundo", "colorHex": "#661716", "stock": 7, "sku": "QRN-HD-BUR-M" },
+      { "id": "v-02-l-bur", "size": "L", "colorName": "Borgoña Profundo", "colorHex": "#661716", "stock": 5, "sku": "QRN-HD-BUR-L" },
+      { "id": "v-02-xl-bur", "size": "XL", "colorName": "Borgoña Profundo", "colorHex": "#661716", "stock": 2, "sku": "QRN-HD-BUR-XL" }
+    ],
+    "measurements": [
+      { "size": "S", "chest": "114", "waist": "112", "hip": "106", "length": "68" },
+      { "size": "M", "chest": "120", "waist": "118", "hip": "112", "length": "71" },
+      { "size": "L", "chest": "126", "waist": "124", "hip": "118", "length": "74" },
+      { "size": "XL", "chest": "132", "waist": "130", "hip": "124", "length": "76" }
+    ]
+  },
+  {
+    "id": "qn-03",
+    "name": "Pantalón Cargo Wide-Leg Sand",
+    "slug": "pantalon-cargo-wide-leg-sand",
+    "description": "Pantalón holgado estilo vintage parachute con bolsillos utilitarios laterales, cintura elástica con cordón ajustable y bajos con tanca elástica.",
+    "category": "ropa",
+    "basePriceUSD": 38,
+    "images": [
+      "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?q=80&w=800&auto=format&fit=crop"
+    ],
+    "isNew": false,
+    "isBestSeller": true,
+    "featured": true,
+    "material": "100% Ripstop de Algodón Lavado",
+    "variants": [
+      { "id": "v-03-s-snd", "size": "S", "colorName": "Arena Sage", "colorHex": "#DAD6BB", "stock": 3, "sku": "QRN-CG-SND-S" },
+      { "id": "v-03-m-snd", "size": "M", "colorName": "Arena Sage", "colorHex": "#DAD6BB", "stock": 6, "sku": "QRN-CG-SND-M" },
+      { "id": "v-03-l-snd", "size": "L", "colorName": "Arena Sage", "colorHex": "#DAD6BB", "stock": 2, "sku": "QRN-CG-SND-L" }
+    ],
+    "measurements": [
+      { "size": "S", "chest": "-", "waist": "72-82", "hip": "108", "length": "104" },
+      { "size": "M", "chest": "-", "waist": "78-88", "hip": "114", "length": "106" },
+      { "size": "L", "chest": "-", "waist": "84-94", "hip": "120", "length": "108" }
+    ]
+  },
+  {
+    "id": "qn-04",
+    "name": "Gorra Vintage \"Quirona 70s\"",
+    "slug": "gorra-vintage-quirona-70s",
+    "description": "Gorra tipo trucker con frontal desestructurado de sarga de algodón, bordado 3D de alta densidad y hebilla de latón envejecido.",
+    "category": "accesorios",
+    "basePriceUSD": 16,
+    "images": [
+      "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?q=80&w=800&auto=format&fit=crop"
+    ],
+    "isNew": true,
+    "isBestSeller": false,
+    "featured": false,
+    "material": "100% Algodón Twill Deslavado",
+    "variants": [
+      { "id": "v-04-u-bur", "size": "Única", "colorName": "Borgoña & Crema", "colorHex": "#661716", "stock": 12, "sku": "QRN-CAP-BUR" },
+      { "id": "v-04-u-yel", "size": "Única", "colorName": "Amarillo & Arena", "colorHex": "#FFDD48", "stock": 8, "sku": "QRN-CAP-YEL" }
+    ]
+  },
+  {
+    "id": "qn-05",
+    "name": "Tote Bag Lona Pesada \"Everyday Store\"",
+    "slug": "tote-bag-lona-everyday-store",
+    "description": "Bolso de tela en lona cruda extra resistente de 16oz con bolsillo interior para teléfono y llaves, y serigrafía de la estrella Quirona.",
+    "category": "bolsos",
+    "basePriceUSD": 14,
+    "images": [
+      "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop"
+    ],
+    "isNew": false,
+    "isBestSeller": true,
+    "featured": false,
+    "material": "Lona de Algodón Crudo 100% 16oz",
+    "variants": [
+      { "id": "v-05-u-crm", "size": "Única", "colorName": "Crudo Natural", "colorHex": "#FFECB9", "stock": 15, "sku": "QRN-TB-NAT" }
+    ]
+  },
+  {
+    "id": "qn-06",
+    "name": "Chaqueta Cazadora Harrington Quirona",
+    "slug": "chaqueta-cazadora-harrington",
+    "description": "Chaqueta ligera con cuello camisero abotonado, forro de cuadros vintage en tonos mostaza y vino, elástico en cintura y cremallera metálica YKK.",
+    "category": "ropa",
+    "basePriceUSD": 58,
+    "originalPriceUSD": 65,
+    "images": [
+      "https://images.unsplash.com/photo-1548883354-7622d03aca27?q=80&w=800&auto=format&fit=crop"
+    ],
+    "isNew": true,
+    "isBestSeller": false,
+    "featured": true,
+    "material": "65% Poliéster, 35% Algodón Peinado",
+    "variants": [
+      { "id": "v-06-s-snd", "size": "S", "colorName": "Arena Sage", "colorHex": "#DAD6BB", "stock": 2, "sku": "QRN-JKT-SND-S" },
+      { "id": "v-06-m-snd", "size": "M", "colorName": "Arena Sage", "colorHex": "#DAD6BB", "stock": 4, "sku": "QRN-JKT-SND-M" },
+      { "id": "v-06-l-snd", "size": "L", "colorName": "Arena Sage", "colorHex": "#DAD6BB", "stock": 3, "sku": "QRN-JKT-SND-L" }
+    ],
+    "measurements": [
+      { "size": "S", "chest": "112", "waist": "106", "hip": "100", "length": "66" },
+      { "size": "M", "chest": "118", "waist": "112", "hip": "106", "length": "69" },
+      { "size": "L", "chest": "124", "waist": "118", "hip": "112", "length": "72" }
+    ]
+  }
+]

@@ -1,0 +1,49 @@
+{
+  "storeName": "Quirona Store",
+  "whatsappNumber": "584121234567",
+  "bankDetails": {
+    "pagoMovil": {
+      "bank": "Banco Banesco (0134)",
+      "phone": "0412-1234567",
+      "idDocument": "V-28.123.456",
+      "beneficiary": "Quirona Store C.A."
+    },
+    "transferencia": {
+      "bank": "Banesco Banco Universal",
+      "accountNumber": "0134-0000-00-0000000000",
+      "accountType": "Corriente",
+      "idDocument": "J-50123456-7",
+      "beneficiary": "Quirona Store C.A."
+    },
+    "zelle": {
+      "email": "pagos@quironastore.com",
+      "holder": "Quirona LLC"
+    },
+    "efectivoNotes": "Pago en divisas o bolívares en efectivo al momento del retiro o entrega."
+  },
+  "hero": {
+    "badge": "Colección Retro Streetwear 2026",
+    "title": "Vibra retro, estilo atemporal y prendas con",
+    "highlightWord": "personalidad.",
+    "subtitle": "Descubre ropa oversize, sudaderas y accesorios confeccionados con cortes exclusivos, tabla de medidas en centímetros y proceso de compra asistido en bolívares o divisas.",
+    "ctaButtonText": "Explorar Colección",
+    "secondaryButtonText": "Ver Catálogo Completo",
+    "floatingBadgeTop": "Diseño Original",
+    "floatingBadgeBottom": "Medidas Reales en CM"
+  },
+  "benefits": {
+    "shippingTitle": "Envíos a Todo el País",
+    "shippingDesc": "MRW, Zoom, Tealca o retiro gratis",
+    "paymentTitle": "Pago Seguro & Verificado",
+    "paymentDesc": "Pago Móvil, Transferencias y Zelle",
+    "supportTitle": "Atención Inmediata",
+    "supportDesc": "Vía WhatsApp todos los días"
+  },
+  "sizeBanner": {
+    "tag": "Hecho para destacar",
+    "title": "¿No estás seguro de tu talla? Escríbenos con tus medidas.",
+    "description": "En Quirona medimos cada prenda a mano para darte la medida exacta en centímetros. Puedes consultarnos antes de ordenar y te aseguramos el fit que buscas.",
+    "buttonText": "Consultar por WhatsApp"
+  },
+  "footerBio": "Boutique de ropa y accesorios con vibra vintage-pop. Prendas diseñadas con personalidad, comodidad y estilo atemporal."
+}
