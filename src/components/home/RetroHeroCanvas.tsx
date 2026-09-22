@@ -52,24 +52,24 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    // --- Lighting Setup ---
-    // Natural pure white ambient preserving the authentic #FFDD48 yellow from the logo
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
+    // --- Lighting Setup: Bright Frontal Studio Lights (Zero ceiling shadows, vibrant & radiant) ---
+    // Pure white omnidirectional ambient light for vibrant, even color fidelity matching the logo #FFDD48
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
     scene.add(ambientLight);
 
-    // Subtle warm directional gloss for 3D depth and specular vinyl glint
-    const keyLight = new THREE.DirectionalLight(0xfff6e6, 0.35);
-    keyLight.position.set(3.0, 4.0, 4.0);
+    // Front-facing beauty key light directly at camera eye-level
+    const keyLight = new THREE.DirectionalLight(0xfffaee, 0.65);
+    keyLight.position.set(1.0, 1.0, 6.5);
     scene.add(keyLight);
 
-    // Soft warm fill light from bottom-left
-    const fillLight = new THREE.DirectionalLight(0xffeedd, 0.15);
-    fillLight.position.set(-3.0, -2.0, 2.5);
+    // Soft frontal fill light from bottom-left to eliminate all under-shadows
+    const fillLight = new THREE.DirectionalLight(0xffeedd, 0.35);
+    fillLight.position.set(-2.0, -0.5, 5.5);
     scene.add(fillLight);
 
-    // Rich burgundy rim light from behind for silhouette depth
-    const rimLight = new THREE.DirectionalLight(0x661716, 1.4);
-    rimLight.position.set(0, 2.5, -4.0);
+    // Golden warm back-rim light for a subtle collectible toy halo
+    const rimLight = new THREE.DirectionalLight(0xfff0aa, 0.45);
+    rimLight.position.set(0, 2.0, -4.0);
     scene.add(rimLight);
 
     // --- Interactive Toy Root Group ---
@@ -103,8 +103,9 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
     const frontMat = new THREE.MeshStandardMaterial({
       map: mascotTexture,
       transparent: true,
-      alphaTest: 0.05,
-      roughness: 0.35,
+      alphaTest: 0.08,
+      depthWrite: true,
+      roughness: 0.28,
       metalness: 0.0,
       side: THREE.FrontSide,
     });
@@ -117,13 +118,13 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
     const totalDepth = 0.36;
     const stepDepth = totalDepth / depthLayersCount;
 
-    // Intermediate depth slices in burgundy contour
+    // Intermediate depth slices in pure yellow vinyl body (matching the authentic #FFDD48 toy core)
     const rimMat = new THREE.MeshStandardMaterial({
-      map: mascotTexture,
+      map: backTexture,
       transparent: true,
-      alphaTest: 0.06,
-      color: 0x661716, // Pure burgundy rim contour #661716
-      roughness: 0.45,
+      alphaTest: 0.08,
+      depthWrite: true,
+      roughness: 0.32,
       metalness: 0.0,
       side: THREE.DoubleSide,
     });
@@ -138,12 +139,13 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
       toyGroup.add(sliceMesh);
     }
 
-    // 3. Back Vinyl Face (Solid yellow vinyl back with burgundy outline & official stamp)
+    // 3. Back Vinyl Face (Solid clean yellow vinyl back with matching burgundy contour, no label/tag)
     const backMat = new THREE.MeshStandardMaterial({
       map: backTexture,
       transparent: true,
-      alphaTest: 0.05,
-      roughness: 0.40,
+      alphaTest: 0.08,
+      depthWrite: true,
+      roughness: 0.30,
       metalness: 0.0,
       side: THREE.BackSide,
     });
@@ -151,15 +153,15 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
     backMesh.position.z = -0.18;
     toyGroup.add(backMesh);
 
-    // 4. Ground Contact Shadow (Soft ellipse calibrated to toy size)
-    const shadowGeom = new THREE.PlaneGeometry(2.9, 0.95);
+    // 4. Ground Contact Shadow (Soft subtle ellipse calibrated to toy size)
+    const shadowGeom = new THREE.PlaneGeometry(2.8, 0.85);
     const shadowCanvas = document.createElement('canvas');
     shadowCanvas.width = 256;
     shadowCanvas.height = 128;
     const sctx = shadowCanvas.getContext('2d')!;
-    const sGrad = sctx.createRadialGradient(128, 64, 10, 128, 64, 60);
-    sGrad.addColorStop(0, 'rgba(78, 17, 16, 0.45)');
-    sGrad.addColorStop(0.6, 'rgba(78, 17, 16, 0.18)');
+    const sGrad = sctx.createRadialGradient(128, 64, 8, 128, 64, 55);
+    sGrad.addColorStop(0, 'rgba(78, 17, 16, 0.22)');
+    sGrad.addColorStop(0.6, 'rgba(78, 17, 16, 0.08)');
     sGrad.addColorStop(1, 'rgba(78, 17, 16, 0)');
     sctx.fillStyle = sGrad;
     sctx.fillRect(0, 0, 256, 128);
@@ -300,9 +302,9 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
       toyGroup.position.y = floatY;
 
       // Dynamic ground shadow scaling with bounce
-      const shadowScale = 1.0 - floatY * 0.45;
+      const shadowScale = 1.0 - floatY * 0.35;
       contactShadow.scale.set(shadowScale, shadowScale, 1);
-      shadowMat.opacity = 0.48 - floatY * 0.25;
+      shadowMat.opacity = 0.32 - floatY * 0.15;
 
       // 2. Parallax and Inertial Drag Rotation
       if (isDragging) {
