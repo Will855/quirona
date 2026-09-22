@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, ShoppingBag, Ruler, ShieldCheck, Truck } from 'lucide-react';
+import RetroHeroCanvas from './RetroHeroCanvas';
 import { SiteConfig } from '@/types';
 
 interface HeroSectionProps {
@@ -90,19 +91,13 @@ export default function HeroSection({ heroConfig }: HeroSectionProps) {
 
           {/* Columna Derecha: Mascota Estrella Quirona & Preview Visual */}
           <div className="lg:col-span-5 flex justify-center">
-            <div className="relative w-64 sm:w-72 md:w-80 lg:w-96 aspect-square">
-              {/* Contenedor central circular retro */}
-              <div className="absolute inset-4 rounded-full bg-quirona-cream border-4 border-quirona-burgundy retro-shadow-lg flex items-center justify-center overflow-hidden">
-                <div className="relative w-48 sm:w-56 md:w-64 h-48 sm:h-56 md:h-64 animate-bounce-slow">
-                  <Image
-                    src="/logo_quirona.jpeg"
-                    alt="Mascota Estrella Quirona"
-                    fill
-                    sizes="(max-width: 768px) 220px, 320px"
-                    className="object-contain hover:scale-105 transition-transform duration-300"
-                    priority
-                  />
-                </div>
+            <div className="relative w-72 sm:w-80 md:w-96 aspect-square">
+              {/* Contenedor central circular retro de fondo */}
+              <div className="absolute inset-4 rounded-full bg-quirona-cream/80 border-4 border-quirona-burgundy retro-shadow-lg pointer-events-none" />
+
+              {/* Escena 3D interactiva */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <RetroHeroCanvas initialMode="toy" allowToggle={true} />
               </div>
 
               {/* Badges flotantes interactivos */}
