@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Package, ShoppingBag, Lock, Tag, Settings } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Package, ShoppingBag, Lock, Tag, Settings, Bell, X } from 'lucide-react';
 import { Product, Order, Category } from '@/types';
 import { useCartStore } from '@/lib/store/useCartStore';
+import { playOrderChime } from '@/lib/sound';
+import { formatUSD } from '@/lib/currency';
 
 // Componentes modulares de Admin
 import AdminLoginCard from '@/components/admin/AdminLoginCard';
@@ -43,6 +45,15 @@ export default function AdminPage() {
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [selectedReceipt, setSelectedReceipt] = useState<AdminReceiptData | null>(null);
 
+  // Alertas en vivo para nuevos pedidos
+  const [newOrderAlert, setNewOrderAlert] = useState<{
+    orderCode: string;
+    customerName: string;
+    totalUSD: number;
+  } | null>(null);
+  const previousOrderIdsRef = useRef<Set<string>>(new Set());
+  const initialLoadDoneRef = useRef(false);
+
   // Cargar productos del backend
   const fetchProducts = useCallback(async () => {
     try {
@@ -75,21 +86,48 @@ export default function AdminPage() {
     }
   }, []);
 
-  // Cargar órdenes del backend
-  const fetchOrders = useCallback(async () => {
+  // Cargar órdenes del backend con detección en vivo
+  const fetchOrders = useCallback(async (showLoading = true) => {
     try {
-      setLoadingOrders(true);
+      if (showLoading) setLoadingOrders(true);
       const res = await fetch('/api/orders');
       const data = await res.json();
       if (data.success && Array.isArray(data.orders)) {
+        // Detectar si llegaron nuevos pedidos tras la carga inicial
+        if (initialLoadDoneRef.current) {
+          const newOrders = data.orders.filter(
+            (o: Order) => !previousOrderIdsRef.current.has(o.id)
+          );
+          if (newOrders.length > 0) {
+            const latest = newOrders[0];
+            playOrderChime();
+            setNewOrderAlert({
+              orderCode: latest.orderCode,
+              customerName: latest.customer.fullName || (latest.customer as any).name || 'Cliente',
+              totalUSD: latest.subtotalUSD,
+            });
+          }
+        }
+
+        previousOrderIdsRef.current = new Set(data.orders.map((o: Order) => o.id));
+        initialLoadDoneRef.current = true;
         setOrders(data.orders);
       }
     } catch (err) {
       console.error('Error cargando pedidos:', err);
     } finally {
-      setLoadingOrders(false);
+      if (showLoading) setLoadingOrders(false);
     }
   }, []);
+
+  // Polling automático en segundo plano para nuevos pedidos cada 15 segundos
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const timer = setInterval(() => {
+      fetchOrders(false);
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [isAuthenticated, fetchOrders]);
 
   // Verificación de sesión al montar
   useEffect(() => {
@@ -101,7 +139,7 @@ export default function AdminPage() {
           setAdminEmail(data.email || 'admin@quirona.com');
           fetchProducts();
           fetchCategories();
-          fetchOrders();
+          fetchOrders(true);
         }
       })
       .catch(() => {})
@@ -319,6 +357,44 @@ export default function AdminPage() {
         receipt={selectedReceipt}
         onClose={() => setSelectedReceipt(null)}
       />
+
+      {/* Alerta flotante retro en vivo para nuevos pedidos */}
+      {newOrderAlert && (
+        <div className="fixed bottom-6 right-6 z-50 bg-quirona-yellow border-3 border-quirona-burgundy p-4 rounded-2xl retro-shadow-lg flex items-center gap-3.5 animate-bounce-slow max-w-sm shadow-2xl">
+          <div className="w-10 h-10 rounded-full bg-quirona-burgundy text-quirona-cream flex items-center justify-center flex-shrink-0 retro-shadow-sm">
+            <Bell className="w-5 h-5 text-quirona-yellow animate-pulse" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] font-black uppercase tracking-wider text-quirona-burgundy">
+              ¡Nuevo Pedido Recibido!
+            </div>
+            <div className="text-xs font-extrabold text-quirona-burgundy truncate">
+              {newOrderAlert.orderCode} • {newOrderAlert.customerName}
+            </div>
+            <div className="text-[11px] font-bold text-quirona-burgundy/80">
+              Total: {formatUSD(newOrderAlert.totalUSD)}
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                setActiveTab('orders');
+                setNewOrderAlert(null);
+              }}
+              className="text-[10px] font-black uppercase bg-quirona-burgundy text-quirona-cream px-2.5 py-1.5 rounded-lg border border-quirona-burgundy hover:opacity-90"
+            >
+              Ver
+            </button>
+            <button
+              onClick={() => setNewOrderAlert(null)}
+              className="p-1 rounded-lg hover:bg-quirona-burgundy/10 text-quirona-burgundy"
+              aria-label="Cerrar alerta"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

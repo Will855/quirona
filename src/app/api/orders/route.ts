@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStoredOrders, createOrderRecord } from '@/lib/server/ordersStore';
+import { notifyNewOrder } from '@/lib/server/telegram';
 import { Order } from '@/types';
 
 export async function GET() {
@@ -46,6 +47,11 @@ export async function POST(request: NextRequest) {
     };
 
     const savedOrder = createOrderRecord(newOrder);
+
+    // Enviar notificación asíncrona a Telegram sin bloquear respuesta al cliente
+    notifyNewOrder(savedOrder).catch((err) => {
+      console.error('[Orders API] Error al despachar alerta de Telegram:', err);
+    });
 
     return NextResponse.json(
       { success: true, order: savedOrder },
