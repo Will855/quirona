@@ -45,31 +45,31 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
       powerPreference: 'high-performance',
     });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.5));
     renderer.toneMapping = THREE.LinearToneMapping;
     renderer.toneMappingExposure = 1.0;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    // --- Lighting Setup: Bright Frontal Studio Lights (Zero ceiling shadows, vibrant & radiant) ---
-    // Pure white omnidirectional ambient light for vibrant, even color fidelity matching the logo #FFDD48
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+    // --- Studio Lighting: Pure Diffuse & Glare-Free ---
+    // Pure white omnidirectional ambient light (100% glare-free, preserving authentic logo colors and contrast)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.15);
     scene.add(ambientLight);
 
-    // Front-facing beauty key light directly at camera eye-level
-    const keyLight = new THREE.DirectionalLight(0xfffaee, 0.65);
-    keyLight.position.set(1.0, 1.0, 6.5);
+    // Soft off-axis key light (defines 3D depth on edges without shining directly into the camera reflection angle)
+    const keyLight = new THREE.DirectionalLight(0xfffaee, 0.28);
+    keyLight.position.set(3.0, 3.5, 3.5);
     scene.add(keyLight);
 
-    // Soft frontal fill light from bottom-left to eliminate all under-shadows
-    const fillLight = new THREE.DirectionalLight(0xffeedd, 0.35);
-    fillLight.position.set(-2.0, -0.5, 5.5);
+    // Subtle fill light from bottom-left
+    const fillLight = new THREE.DirectionalLight(0xffeedd, 0.12);
+    fillLight.position.set(-2.5, -2.0, 2.5);
     scene.add(fillLight);
 
-    // Golden warm back-rim light for a subtle collectible toy halo
-    const rimLight = new THREE.DirectionalLight(0xfff0aa, 0.45);
-    rimLight.position.set(0, 2.0, -4.0);
+    // Soft warm backlight for 3D silhouette separation
+    const rimLight = new THREE.DirectionalLight(0xfff0aa, 0.35);
+    rimLight.position.set(0, 2.0, -3.5);
     scene.add(rimLight);
 
     // --- Interactive Toy Root Group ---
@@ -80,32 +80,37 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
     const toyGroup = new THREE.Group();
     rootGroup.add(toyGroup);
 
-    // --- Texture Loading (Official Quirona Mascot Artwork) ---
+    // --- Texture Loading (Razor-Sharp Official Quirona Mascot Artwork) ---
     const textureLoader = new THREE.TextureLoader();
+    const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
+
+    // Disable mipmaps to prevent downsampling blur; sample full 1024x1024 crisp source
     const mascotTexture = textureLoader.load('/mascot_main_toy.png');
     mascotTexture.colorSpace = THREE.SRGBColorSpace;
-    mascotTexture.minFilter = THREE.LinearMipmapLinearFilter;
+    mascotTexture.generateMipmaps = false;
+    mascotTexture.minFilter = THREE.LinearFilter;
     mascotTexture.magFilter = THREE.LinearFilter;
-    mascotTexture.generateMipmaps = true;
+    mascotTexture.anisotropy = maxAnisotropy;
 
     const backTexture = textureLoader.load('/mascot_back_toy.png');
     backTexture.colorSpace = THREE.SRGBColorSpace;
-    backTexture.minFilter = THREE.LinearMipmapLinearFilter;
+    backTexture.generateMipmaps = false;
+    backTexture.minFilter = THREE.LinearFilter;
     backTexture.magFilter = THREE.LinearFilter;
-    backTexture.generateMipmaps = true;
+    backTexture.anisotropy = maxAnisotropy;
 
     // --- 3D Sculpted Vinyl Layers ---
     // Dimension of the mascot in 3D scene units (scaled to fit comfortably within the circular framing)
     const toySize = 3.85;
     const planeGeom = new THREE.PlaneGeometry(toySize, toySize);
 
-    // 1. Front Vinyl Face Material (with official lettering & warm golden yellow #FFDD48)
+    // 1. Front Vinyl Face Material (Smooth matte vinyl finish — zero blinding white glare, 100% sharp artwork)
     const frontMat = new THREE.MeshStandardMaterial({
       map: mascotTexture,
       transparent: true,
       alphaTest: 0.08,
       depthWrite: true,
-      roughness: 0.28,
+      roughness: 0.88, // Matte finish eliminates harsh specular reflections and haze
       metalness: 0.0,
       side: THREE.FrontSide,
     });
@@ -124,7 +129,7 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
       transparent: true,
       alphaTest: 0.08,
       depthWrite: true,
-      roughness: 0.32,
+      roughness: 0.80,
       metalness: 0.0,
       side: THREE.DoubleSide,
     });
@@ -145,7 +150,7 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
       transparent: true,
       alphaTest: 0.08,
       depthWrite: true,
-      roughness: 0.30,
+      roughness: 0.85,
       metalness: 0.0,
       side: THREE.BackSide,
     });
