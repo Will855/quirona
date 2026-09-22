@@ -52,23 +52,23 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    // --- Studio Lighting: Pure Diffuse & Glare-Free ---
-    // Pure white omnidirectional ambient light (100% glare-free, preserving authentic logo colors and contrast)
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.15);
+    // --- Studio Lighting: Ambient & Volume Definition ---
+    // Pure white omnidirectional ambient light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
     scene.add(ambientLight);
 
-    // Soft off-axis key light (defines 3D depth on edges without shining directly into the camera reflection angle)
-    const keyLight = new THREE.DirectionalLight(0xfffaee, 0.28);
-    keyLight.position.set(3.0, 3.5, 3.5);
+    // Soft off-axis key light (defines 3D volume on edges when rotating, zero direct camera reflection)
+    const keyLight = new THREE.DirectionalLight(0xfffaee, 0.25);
+    keyLight.position.set(2.5, 3.0, 3.5);
     scene.add(keyLight);
 
     // Subtle fill light from bottom-left
-    const fillLight = new THREE.DirectionalLight(0xffeedd, 0.12);
-    fillLight.position.set(-2.5, -2.0, 2.5);
+    const fillLight = new THREE.DirectionalLight(0xffeedd, 0.15);
+    fillLight.position.set(-2.0, -1.5, 2.5);
     scene.add(fillLight);
 
     // Soft warm backlight for 3D silhouette separation
-    const rimLight = new THREE.DirectionalLight(0xfff0aa, 0.35);
+    const rimLight = new THREE.DirectionalLight(0xfff0aa, 0.30);
     rimLight.position.set(0, 2.0, -3.5);
     scene.add(rimLight);
 
@@ -104,13 +104,16 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
     const toySize = 3.85;
     const planeGeom = new THREE.PlaneGeometry(toySize, toySize);
 
-    // 1. Front Vinyl Face Material (Smooth matte vinyl finish — zero blinding white glare, 100% sharp artwork)
+    // 1. Front Vinyl Face Material (Radiant, full-brightness #FFDD48 yellow, zero white glare, razor-sharp)
     const frontMat = new THREE.MeshStandardMaterial({
       map: mascotTexture,
       transparent: true,
       alphaTest: 0.08,
       depthWrite: true,
-      roughness: 0.88, // Matte finish eliminates harsh specular reflections and haze
+      emissive: 0xffffff,
+      emissiveMap: mascotTexture,
+      emissiveIntensity: 0.78, // Guaranteed radiant base illumination matching the logo and CSS buttons
+      roughness: 0.75,
       metalness: 0.0,
       side: THREE.FrontSide,
     });
@@ -123,13 +126,16 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
     const totalDepth = 0.36;
     const stepDepth = totalDepth / depthLayersCount;
 
-    // Intermediate depth slices in pure yellow vinyl body (matching the authentic #FFDD48 toy core)
+    // Intermediate depth slices in pure yellow vinyl body
     const rimMat = new THREE.MeshStandardMaterial({
       map: backTexture,
       transparent: true,
       alphaTest: 0.08,
       depthWrite: true,
-      roughness: 0.80,
+      emissive: 0xffffff,
+      emissiveMap: backTexture,
+      emissiveIntensity: 0.65,
+      roughness: 0.70,
       metalness: 0.0,
       side: THREE.DoubleSide,
     });
@@ -144,13 +150,16 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
       toyGroup.add(sliceMesh);
     }
 
-    // 3. Back Vinyl Face (Solid clean yellow vinyl back with matching burgundy contour, no label/tag)
+    // 3. Back Vinyl Face (Solid clean yellow vinyl back, radiant and label-free)
     const backMat = new THREE.MeshStandardMaterial({
       map: backTexture,
       transparent: true,
       alphaTest: 0.08,
       depthWrite: true,
-      roughness: 0.85,
+      emissive: 0xffffff,
+      emissiveMap: backTexture,
+      emissiveIntensity: 0.75,
+      roughness: 0.75,
       metalness: 0.0,
       side: THREE.BackSide,
     });
