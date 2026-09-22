@@ -97,7 +97,7 @@ export default function HeroSection({ heroConfig }: HeroSectionProps) {
 
               {/* Escena 3D interactiva */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <RetroHeroCanvas initialMode="toy" allowToggle={true} />
+                <RetroHeroCanvas />
               </div>
 
               {/* Badges flotantes interactivos */}
