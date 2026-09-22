@@ -46,30 +46,30 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
     });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    renderer.toneMapping = THREE.LinearToneMapping;
+    renderer.toneMappingExposure = 1.0;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
     // --- Lighting Setup ---
-    // Warm key light from top-left
-    const keyLight = new THREE.DirectionalLight(0xfff5d6, 3.2);
-    keyLight.position.set(3.5, 4.5, 5);
-    scene.add(keyLight);
-
-    // Creamy ambient bounce light
-    const ambientLight = new THREE.AmbientLight(0xfff8ee, 1.4);
+    // Natural pure white ambient preserving the authentic #FFDD48 yellow from the logo
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
     scene.add(ambientLight);
 
-    // Warm fill light from bottom-left
-    const fillLight = new THREE.DirectionalLight(0xffecb9, 1.6);
-    fillLight.position.set(-3.5, -2, 3);
+    // Subtle warm directional gloss for 3D depth and specular vinyl glint
+    const keyLight = new THREE.DirectionalLight(0xfff6e6, 0.35);
+    keyLight.position.set(3.0, 4.0, 4.0);
+    scene.add(keyLight);
+
+    // Soft warm fill light from bottom-left
+    const fillLight = new THREE.DirectionalLight(0xffeedd, 0.15);
+    fillLight.position.set(-3.0, -2.0, 2.5);
     scene.add(fillLight);
 
-    // Deep burgundy rim light from behind for silhouette depth
-    const rimLight = new THREE.DirectionalLight(0x661716, 2.8);
-    rimLight.position.set(0, 3, -4);
+    // Rich burgundy rim light from behind for silhouette depth
+    const rimLight = new THREE.DirectionalLight(0x661716, 1.4);
+    rimLight.position.set(0, 2.5, -4.0);
     scene.add(rimLight);
 
     // --- Interactive Toy Root Group ---
@@ -88,42 +88,48 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
     mascotTexture.magFilter = THREE.LinearFilter;
     mascotTexture.generateMipmaps = true;
 
+    const backTexture = textureLoader.load('/mascot_back_toy.png');
+    backTexture.colorSpace = THREE.SRGBColorSpace;
+    backTexture.minFilter = THREE.LinearMipmapLinearFilter;
+    backTexture.magFilter = THREE.LinearFilter;
+    backTexture.generateMipmaps = true;
+
     // --- 3D Sculpted Vinyl Layers ---
-    // Dimension of the mascot in 3D scene units
-    const toySize = 4.8;
+    // Dimension of the mascot in 3D scene units (scaled to fit comfortably within the circular framing)
+    const toySize = 3.85;
     const planeGeom = new THREE.PlaneGeometry(toySize, toySize);
 
-    // 1. Front Vinyl Face Material (with official lettering & gel highlights)
+    // 1. Front Vinyl Face Material (with official lettering & warm golden yellow #FFDD48)
     const frontMat = new THREE.MeshStandardMaterial({
       map: mascotTexture,
       transparent: true,
-      alphaTest: 0.02,
-      roughness: 0.28,
-      metalness: 0.05,
+      alphaTest: 0.05,
+      roughness: 0.35,
+      metalness: 0.0,
       side: THREE.FrontSide,
     });
     const frontMesh = new THREE.Mesh(planeGeom, frontMat);
-    frontMesh.position.z = 0.22;
+    frontMesh.position.z = 0.18;
     toyGroup.add(frontMesh);
 
     // 2. Multi-layered 3D Thickness (Creates tactile vinyl depth when rotated)
     const depthLayersCount = 14;
-    const totalDepth = 0.44;
+    const totalDepth = 0.36;
     const stepDepth = totalDepth / depthLayersCount;
 
-    // Intermediate depth slices in burgundy contour & warm yellow
+    // Intermediate depth slices in burgundy contour
     const rimMat = new THREE.MeshStandardMaterial({
       map: mascotTexture,
       transparent: true,
-      alphaTest: 0.08,
-      color: 0x5a1211, // Burgundy rim contour
-      roughness: 0.4,
-      metalness: 0.02,
+      alphaTest: 0.06,
+      color: 0x661716, // Pure burgundy rim contour #661716
+      roughness: 0.45,
+      metalness: 0.0,
       side: THREE.DoubleSide,
     });
 
     for (let i = 1; i < depthLayersCount; i++) {
-      const zPos = 0.22 - i * stepDepth;
+      const zPos = 0.18 - i * stepDepth;
       const sliceMesh = new THREE.Mesh(planeGeom, rimMat);
       sliceMesh.position.z = zPos;
       // Very slight scale step for rounded edge feel
@@ -132,50 +138,21 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
       toyGroup.add(sliceMesh);
     }
 
-    // 3. Back Vinyl Face (Solid yellow vinyl back with burgundy outline)
-    const backCanvas = document.createElement('canvas');
-    backCanvas.width = 1024;
-    backCanvas.height = 1024;
-    const bctx = backCanvas.getContext('2d')!;
-    bctx.fillStyle = '#FFDD48';
-    bctx.fillRect(0, 0, 1024, 1024);
-    // Subtle vinyl back radial glow
-    const bGrad = bctx.createRadialGradient(512, 512, 100, 512, 512, 500);
-    bGrad.addColorStop(0, '#FFE875');
-    bGrad.addColorStop(1, '#FFDD48');
-    bctx.fillStyle = bGrad;
-    bctx.fillRect(0, 0, 1024, 1024);
-
-    // Embossed back brand stamp
-    bctx.strokeStyle = '#661716';
-    bctx.lineWidth = 12;
-    bctx.strokeRect(320, 440, 384, 144);
-    bctx.fillStyle = '#661716';
-    bctx.font = '900 48px sans-serif';
-    bctx.textAlign = 'center';
-    bctx.textBaseline = 'middle';
-    bctx.fillText('QUIRONA', 512, 495);
-    bctx.font = '700 24px sans-serif';
-    bctx.fillText('ORIGINAL VINYL', 512, 545);
-
-    const backTexture = new THREE.CanvasTexture(backCanvas);
-    backTexture.colorSpace = THREE.SRGBColorSpace;
-
+    // 3. Back Vinyl Face (Solid yellow vinyl back with burgundy outline & official stamp)
     const backMat = new THREE.MeshStandardMaterial({
-      map: mascotTexture,
+      map: backTexture,
       transparent: true,
-      alphaTest: 0.02,
-      color: 0xffdd48, // Warm yellow back
-      roughness: 0.35,
-      metalness: 0.04,
+      alphaTest: 0.05,
+      roughness: 0.40,
+      metalness: 0.0,
       side: THREE.BackSide,
     });
     const backMesh = new THREE.Mesh(planeGeom, backMat);
-    backMesh.position.z = -0.22;
+    backMesh.position.z = -0.18;
     toyGroup.add(backMesh);
 
-    // 4. Ground Contact Shadow (Soft ellipse that reacts to toy bounce)
-    const shadowGeom = new THREE.PlaneGeometry(3.6, 1.2);
+    // 4. Ground Contact Shadow (Soft ellipse calibrated to toy size)
+    const shadowGeom = new THREE.PlaneGeometry(2.9, 0.95);
     const shadowCanvas = document.createElement('canvas');
     shadowCanvas.width = 256;
     shadowCanvas.height = 128;
@@ -195,7 +172,7 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
     });
     const contactShadow = new THREE.Mesh(shadowGeom, shadowMat);
     contactShadow.rotation.x = -Math.PI / 2;
-    contactShadow.position.y = -2.3;
+    contactShadow.position.y = -1.95;
     rootGroup.add(contactShadow);
 
     // --- Physics & Interaction State ---
@@ -319,13 +296,13 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
       const elapsed = clock.getElapsedTime();
 
       // 1. Idle Floating Bob
-      const floatY = Math.sin(elapsed * 1.8) * 0.14;
+      const floatY = Math.sin(elapsed * 1.8) * 0.11;
       toyGroup.position.y = floatY;
 
       // Dynamic ground shadow scaling with bounce
-      const shadowScale = 1.0 - floatY * 0.5;
+      const shadowScale = 1.0 - floatY * 0.45;
       contactShadow.scale.set(shadowScale, shadowScale, 1);
-      shadowMat.opacity = 0.5 - floatY * 0.3;
+      shadowMat.opacity = 0.48 - floatY * 0.25;
 
       // 2. Parallax and Inertial Drag Rotation
       if (isDragging) {
@@ -426,7 +403,7 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
           <img
             src="/mascot_main_toy.png"
             alt="Mascota Estrella Quirona"
-            className="w-56 h-56 object-contain"
+            className="w-48 h-48 object-contain"
           />
         </div>
       )}
