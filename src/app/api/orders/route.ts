@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStoredOrders, createOrderRecord } from '@/lib/server/ordersStore';
 import { notifyNewOrder } from '@/lib/server/telegram';
+import {
+  sendOrderNotificationToAdmin,
+  sendOrderConfirmationToCustomer,
+} from '@/lib/server/email';
+import { getAdminAuthData } from '@/lib/server/adminAuthStore';
+import { getStoredSiteConfig } from '@/lib/server/siteConfigStore';
 import { Order } from '@/types';
 
 export async function GET() {
@@ -48,9 +54,31 @@ export async function POST(request: NextRequest) {
 
     const savedOrder = createOrderRecord(newOrder);
 
-    // Enviar notificación asíncrona a Telegram sin bloquear respuesta al cliente
+    // 1. Notificación asíncrona a Telegram para el dueño
     notifyNewOrder(savedOrder).catch((err) => {
       console.error('[Orders API] Error al despachar alerta de Telegram:', err);
+    });
+
+    // 2. Notificación asíncrona por Correo (Resend)
+    const authData = getAdminAuthData();
+    const siteConfig = getStoredSiteConfig();
+
+    // Correo al DUEÑO (mismo contenido que Telegram)
+    sendOrderNotificationToAdmin({
+      adminEmail: authData.adminEmail,
+      order: savedOrder,
+    }).catch((err) => {
+      console.error('[Orders API] Error al enviar correo al admin:', err);
+    });
+
+    // Correo al CLIENTE (confirmación de compra con datos de pago)
+    sendOrderConfirmationToCustomer({
+      order: savedOrder,
+      storeName: siteConfig.storeName,
+      whatsappNumber: siteConfig.whatsappNumber,
+      bankDetails: siteConfig.bankDetails,
+    }).catch((err) => {
+      console.error('[Orders API] Error al enviar confirmación al cliente:', err);
     });
 
     return NextResponse.json(

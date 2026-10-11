@@ -116,6 +116,8 @@ export interface BankPaymentDetails {
   efectivoNotes?: string;
 }
 
+export type BankDetails = BankPaymentDetails;
+
 export interface SiteConfig {
   storeName: string;
   whatsappNumber: string;

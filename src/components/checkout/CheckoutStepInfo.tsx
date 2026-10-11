@@ -8,6 +8,8 @@ import { formatUSD, formatVES } from '@/lib/currency';
 interface CheckoutStepInfoProps {
   fullName: string;
   setFullName: (v: string) => void;
+  email: string;
+  setEmail: (v: string) => void;
   whatsapp: string;
   setWhatsapp: (v: string) => void;
   idDocument: string;
@@ -26,6 +28,8 @@ interface CheckoutStepInfoProps {
 export default function CheckoutStepInfo({
   fullName,
   setFullName,
+  email,
+  setEmail,
   whatsapp,
   setWhatsapp,
   idDocument,
@@ -76,6 +80,20 @@ export default function CheckoutStepInfo({
 
         <div>
           <label className="block text-xs font-extrabold text-quirona-burgundy uppercase mb-1">
+            Correo Electrónico *
+          </label>
+          <input
+            type="email"
+            required
+            placeholder="Ej. maria@ejemplo.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2.5 text-sm text-quirona-burgundy font-semibold placeholder:text-quirona-burgundy/40 focus:outline-none focus:ring-2 focus:ring-quirona-yellow"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-extrabold text-quirona-burgundy uppercase mb-1">
             WhatsApp de Contacto *
           </label>
           <input
@@ -102,7 +120,7 @@ export default function CheckoutStepInfo({
           />
         </div>
 
-        <div>
+        <div className="sm:col-span-2">
           <label className="block text-xs font-extrabold text-quirona-burgundy uppercase mb-1">
             Ciudad *
           </label>

@@ -25,6 +25,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
   // Datos del cliente
   const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [idDocument, setIdDocument] = useState('');
   const [city, setCity] = useState('');
@@ -146,6 +147,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       orderCode,
       customer: {
         fullName,
+        email: email.trim() || undefined,
         whatsapp,
         idDocument,
         city,
@@ -211,6 +213,8 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
           <CheckoutStepInfo
             fullName={fullName}
             setFullName={setFullName}
+            email={email}
+            setEmail={setEmail}
             whatsapp={whatsapp}
             setWhatsapp={setWhatsapp}
             idDocument={idDocument}

@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateOrderRecord, deleteOrderRecord } from '@/lib/server/ordersStore';
 import { notifyReceiptUploaded } from '@/lib/server/telegram';
+import {
+  sendReceiptNotificationToAdmin,
+  sendReceiptConfirmationToCustomer,
+} from '@/lib/server/email';
+import { getAdminAuthData } from '@/lib/server/adminAuthStore';
 
 export async function PUT(
   request: NextRequest,
@@ -18,10 +23,30 @@ export async function PUT(
       );
     }
 
-    // Si el cliente subió comprobante, notificar de inmediato al admin
+    // Si el cliente subió comprobante, notificar tanto por Telegram como por Correo
     if (body.paymentReceipt) {
+      const authData = getAdminAuthData();
+
+      // Telegram al dueño
       notifyReceiptUploaded(updated, body.paymentReceipt).catch((err) => {
-        console.error('[Orders API] Error al notificar comprobante:', err);
+        console.error('[Orders API] Error al notificar comprobante por Telegram:', err);
+      });
+
+      // Correo al dueño (mismo reporte que Telegram)
+      sendReceiptNotificationToAdmin({
+        adminEmail: authData.adminEmail,
+        order: updated,
+        receiptData: body.paymentReceipt,
+      }).catch((err) => {
+        console.error('[Orders API] Error al notificar comprobante por correo al admin:', err);
+      });
+
+      // Correo de confirmación al cliente
+      sendReceiptConfirmationToCustomer({
+        order: updated,
+        referenceNumber: body.paymentReceipt.referenceNumber,
+      }).catch((err) => {
+        console.error('[Orders API] Error al notificar recepción de comprobante al cliente:', err);
       });
     }
 

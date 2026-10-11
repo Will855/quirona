@@ -9,6 +9,7 @@ import { MessageCircle, RefreshCw, Lock } from 'lucide-react';
 export default function TopBar() {
   const { exchangeRate, setExchangeRate } = useCartStore();
   const [mounted, setMounted] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState('584121234567');
 
   useEffect(() => {
     setMounted(true);
@@ -17,6 +18,15 @@ export default function TopBar() {
       .then((data) => {
         if (data.success && data.rate) {
           setExchangeRate(data.rate);
+        }
+      })
+      .catch(() => {});
+
+    fetch('/api/site-config')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.config?.whatsappNumber) {
+          setWhatsappNumber(data.config.whatsappNumber);
         }
       })
       .catch(() => {});
@@ -49,7 +59,7 @@ export default function TopBar() {
           </Link>
 
           <a
-            href="https://wa.me/584121234567?text=Hola%20Quirona!%20Quisiera%20hacer%20una%20consulta"
+            href={`https://wa.me/${whatsappNumber}?text=Hola%20Quirona!%20Quisiera%20hacer%20una%20consulta`}
             target="_blank"
             rel="noopener noreferrer"
             className="hidden sm:flex items-center gap-1 hover:text-quirona-yellow transition-colors"

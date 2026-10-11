@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, RefreshCw, LogOut } from 'lucide-react';
+import { ArrowLeft, RefreshCw, LogOut, ShieldCheck, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { formatVES } from '@/lib/currency';
 
 interface AdminHeaderProps {
@@ -18,18 +18,123 @@ export default function AdminHeader({
   onUpdateExchangeRate,
   onLogout,
 }: AdminHeaderProps) {
-  const handleEditRate = () => {
-    const input = prompt(
-      'Ingresa la nueva tasa de cambio (VES por 1 USD):',
-      exchangeRate.toString()
-    );
-    if (input && !isNaN(Number(input))) {
-      onUpdateExchangeRate(Number(input));
+  const [syncingRate, setSyncingRate] = useState(false);
+  const [rateStatus, setRateStatus] = useState<string>('VIGENTE');
+  const [statusDesc, setStatusDesc] = useState<string>('Validando estado BCV...');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Consultar estado de la tasa BCV al montar
+  const fetchRateStatus = async () => {
+    try {
+      const res = await fetch('/api/exchange-rate');
+      const data = await res.json();
+      if (data.success) {
+        if (data.rate && data.rate !== exchangeRate) {
+          onUpdateExchangeRate(data.rate);
+        }
+        if (data.status) setRateStatus(data.status);
+        if (data.statusDescription) setStatusDesc(data.statusDescription);
+      }
+    } catch {
+      // Ignorar error transitorio
     }
   };
 
+  useEffect(() => {
+    fetchRateStatus();
+  }, []);
+
+  // Forzar sincronización con los servidores oficiales del BCV
+  const handleSyncLiveRate = async () => {
+    try {
+      setSyncingRate(true);
+      setToastMessage(null);
+      const res = await fetch('/api/exchange-rate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ forceLive: true }),
+      });
+      const data = await res.json();
+      if (data.success && data.rate) {
+        onUpdateExchangeRate(data.rate);
+        if (data.status) setRateStatus(data.status);
+        if (data.statusDescription) setStatusDesc(data.statusDescription);
+        setToastMessage(`¡Tasa BCV actualizada: 1 USD = ${formatVES(data.rate)}!`);
+        setTimeout(() => setToastMessage(null), 4000);
+      } else {
+        alert(data.error || 'No se pudo contactar los servidores del BCV en este momento.');
+      }
+    } catch {
+      alert('Error de conexión al sincronizar con el BCV.');
+    } finally {
+      setSyncingRate(false);
+    }
+  };
+
+  const handleEditRateManual = () => {
+    const input = prompt(
+      'Sobreescribir tasa manualmente (VES por 1 USD):',
+      exchangeRate.toString()
+    );
+    if (input && !isNaN(Number(input))) {
+      const num = Number(input);
+      fetch('/api/exchange-rate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rate: num }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            onUpdateExchangeRate(num);
+            setRateStatus('MANUAL');
+            setStatusDesc('Tasa fijada manualmente por el administrador.');
+          }
+        })
+        .catch(() => {
+          onUpdateExchangeRate(num);
+        });
+    }
+  };
+
+  // Badge visual de estado BCV
+  const renderRateBadge = () => {
+    if (rateStatus === 'VIGENTE') {
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-black text-green-800 bg-green-100 border border-green-300 px-2 py-0.5 rounded-full" title={statusDesc}>
+          <CheckCircle2 className="w-3 h-3 text-green-600" /> Vigente BCV
+        </span>
+      );
+    }
+    if (rateStatus === 'PENDIENTE_DESPUES_DE_1PM') {
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full" title={statusDesc}>
+          <Clock className="w-3 h-3 text-amber-600" /> Pendiente &gt;1:00 PM
+        </span>
+      );
+    }
+    if (rateStatus === 'FIN_DE_SEMANA') {
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-black text-blue-800 bg-blue-100 border border-blue-300 px-2 py-0.5 rounded-full" title={statusDesc}>
+          <Clock className="w-3 h-3 text-blue-600" /> Fin de Semana
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-black text-purple-800 bg-purple-100 border border-purple-300 px-2 py-0.5 rounded-full" title={statusDesc}>
+        <AlertCircle className="w-3 h-3 text-purple-600" /> Manual
+      </span>
+    );
+  };
+
   return (
-    <div className="bg-quirona-cream p-6 sm:p-8 rounded-3xl border-3 border-quirona-burgundy retro-shadow flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+    <div className="bg-quirona-cream p-6 sm:p-8 rounded-3xl border-3 border-quirona-burgundy retro-shadow flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative">
+      {toastMessage && (
+        <div className="absolute top-2 right-6 bg-green-600 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-lg border-2 border-green-800 animate-fadeIn z-20">
+          {toastMessage}
+        </div>
+      )}
+
       <div>
         <Link
           href="/"
@@ -44,25 +149,39 @@ export default function AdminHeader({
           </span>
         </h1>
         <p className="text-xs sm:text-sm text-quirona-burgundy/80 mt-1">
-          Gestiona tu catálogo de ropa, agrega nuevas prendas con tallas y medidas, y monitorea tus pedidos.
+          Gestión de catálogo, verificación de transferencias y control de tasa oficial BCV.
         </p>
       </div>
 
       {/* Acciones de Cabecera: Tasa + Usuario + Salir */}
       <div className="flex items-center gap-3 flex-wrap">
-        {/* Tasa del día */}
+        {/* Tasa del día con botón de sincronización directa */}
         <div className="bg-quirona-bg p-3 rounded-2xl border-2 border-quirona-burgundy retro-shadow-sm flex items-center gap-3">
           <div>
-            <div className="text-[10px] font-black uppercase text-quirona-burgundy/70">Tasa Oficial:</div>
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <span className="text-[10px] font-black uppercase text-quirona-burgundy/70">Tasa Oficial:</span>
+              {renderRateBadge()}
+            </div>
             <div className="text-sm font-black text-quirona-burgundy">1 USD = {formatVES(exchangeRate)}</div>
           </div>
-          <button
-            onClick={handleEditRate}
-            className="p-1.5 rounded-xl bg-quirona-yellow border border-quirona-burgundy hover:bg-quirona-yellow-hover text-quirona-burgundy"
-            title="Cambiar tasa"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-          </button>
+
+          <div className="flex flex-col gap-1">
+            <button
+              onClick={handleSyncLiveRate}
+              disabled={syncingRate}
+              className="p-1.5 rounded-lg bg-quirona-yellow border border-quirona-burgundy hover:bg-quirona-yellow-hover text-quirona-burgundy transition-all disabled:opacity-50"
+              title="Sincronizar tasa BCV oficial en vivo"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${syncingRate ? 'animate-spin' : ''}`} />
+            </button>
+            <button
+              onClick={handleEditRateManual}
+              className="text-[9px] font-bold text-quirona-burgundy/60 hover:text-quirona-burgundy hover:underline text-center"
+              title="Editar tasa manualmente"
+            >
+              Editar
+            </button>
+          </div>
         </div>
 
         {/* Sesión y Cerrar Sesión */}
