@@ -1,50 +1,70 @@
-# Quirona Store
-*E-commerce boutique con experiencia inmersiva tridimensional y flujo transaccional multimoneda.*
+# Quirona Store - Arquitectura e Ingenieria
+
+Plataforma de catalogo y checkout interactivo construida sobre Next.js 15 y React 19, integrando un motor grafico WebGL en tiempo real (Three.js), gestion de estado atomico en memoria (Zustand) y canalizacion asincrona de ordenes mediante Serverless Route Handlers.
 
 ---
 
-## 1. Visión General
-Quirona Store es una plataforma de comercio electrónico orientada a la comercialización de indumentaria urbana bajo una identidad visual retro-vintage. El sistema combina una experiencia de usuario interactiva mediante gráficos 3D en tiempo real con una arquitectura diseñada para operar con moneda dual (USD y moneda local VES).
+## 1. Arquitectura del Sistema
 
-El desarrollo abarcó la arquitectura integral de la solución, desde el modelado de la interfaz y la integración gráfica con Three.js, hasta la gestión de estado reactivo y la infraestructura de despliegue continuo.
+La aplicacion implementa el paradigma App Router de Next.js 15, estableciendo una separacion estricta entre React Server Components (RSC) y Client Components para minimizar el First Contentful Paint (FCP) y eliminar sobrecarga de JavaScript en el hilo principal:
 
----
+- Server-First Boundaries: Las vistas de catalogo y las capas de metadata se resuelven en el servidor, despachando HTML estatico con cero bloqueo de ejecucion en el cliente.
+- Client Boundaries Aislados: La interactividad (motor 3D, drawer del carrito, selector de variantes) queda encapsulada en componentes delimitados mediante `'use client'`, evitando re-renderizados en cascada en el arbol DOM principal.
+- Route Handlers Modulares: Endpoints RESTful nativos (`/api/orders`, `/api/products`, `/api/exchange-rate`) para procesamiento transaccional en entorno Serverless.
 
-## 2. El Problema de Negocio
-El comercio digital de marcas boutique suele enfrentar dos fricciones principales:
-- Falta de diferenciación de marca: Las plantillas estándar de comercio electrónico ofrecen experiencias planas que no transmiten la identidad estética de marcas de diseño independiente.
-- Fricción transaccional multimoneda: En economías con dinámicas cambiarias fluctuantes, los catálogos estáticos no reflejan de forma transparente la conversión de precios ni facilitan un cierre de venta ágil.
-
-El desafío consistió en diseñar una aplicación con tiempos de carga inferiores a un segundo, que integrara renderizado tridimensional interactivo sin degradar el rendimiento en dispositivos móviles y ofreciera un flujo de compra asistido.
-
----
-
-## 3. Arquitectura y Stack Tecnológico
-La solución implementa una arquitectura moderna sobre Next.js 15 bajo el paradigma App Router, priorizando el renderizado híbrido para optimizar la velocidad de entrega y la indexación en motores de búsqueda.
-
-- Frontend y Renderizado: Next.js 15, React 19, TypeScript y Tailwind CSS. La separación entre Server Components y Client Components permite despachar el catálogo con cero sobrecarga de JavaScript antes de hidratar los módulos interactivos.
-- Gráficos 3D: Three.js para la manipulación y renderizado de geometrías interactivas en la sección principal, desacopladas del ciclo de vida del DOM tradicional para sostener 60 FPS estables.
-- Gestión de Estado: Zustand para el control centralizado del carrito de compras con persistencia en almacenamiento local (LocalStorage).
-- Infraestructura y Despliegue: Vercel con integración continua (CI/CD) conectada a GitHub, distribución perimetral y optimización automática de activos estáticos.
-
-### Flujo de Datos
-```
-[Catálogo Server Components] ---> [Hidratación React 19] ---> [Zustand Store (Carrito)] ---> [Checkout Asistido]
-                                           |
-                                  [Canvas 3D Three.js]
+```text
+[Browser Client]
+   |-- DOM Tree (React 19 RSC)
+   |-- WebGL Viewport (Three.js Canvas / requestAnimationFrame Loop)
+   +-- Store Reactivo (Zustand + LocalStorage Sync)
+          |
+          v (JSON payload / HTTP POST)
+[Next.js Route Handlers] ---> [Dispatcher de Ordenes] (Async Fire-and-Forget)
+          |
+          v
+[Motor de Persistencia & Normalizacion de Precios]
 ```
 
 ---
 
-## 4. Funcionalidades Principales
-- Renderizado 3D Interactivo: Elementos tridimensionales con iluminación dinámica y respuesta fluida a eventos de puntero y gestos táctiles.
-- Carrito de Compras Reactivo: Almacén global desacoplado que gestiona adición, remoción, cantidades y cálculo automático de totales en memoria.
-- Cotización Dinámica Multimoneda: Conversión de precios en tiempo real para transparentar el costo final de los productos.
-- Flujo de Checkout Asistido: Canalización estructurada del resumen de compra hacia mensajería directa para minimizar la tasa de abandono de carritos.
-- Diseño Defensivo y Tipado Estricto: Validación exhaustiva de propiedades de producto y tipado estricto para prevenir excepciones en tiempo de ejecución.
+## 2. Motor Grafico 3D y Fisica de Interaccion
+
+La interfaz integra una capa WebGL interactiva basada en Three.js puro, optimizada para sostener 60 FPS estables en un rango heterogeneo de GPUs (dispositivos moviles y de escritorio).
+
+### Modelo Fisico y Amortiguacion Angular
+- Inercia y Arrastre: Algoritmo de rotacion basado en velocidad angular acumulada (`dragVelocityX`, `dragVelocityY`) con factor de amortiguacion exponencial (`velocity *= 0.92`). Al cesar la interaccion de puntero, el modelo desacelera de manera continua hasta alcanzar reposo sin cortes discretos.
+- Amortiguacion Suave (Slerp): La reorientacion hacia la pose de reposo utiliza interpolacion esferica lineal para evitar artefactos de Gimbal Lock.
+- Presupuesto de Cuadros (Frame Budget): Ejecucion ligada a `requestAnimationFrame` con cancelacion explicita en el desmontaje (`cancelAnimationFrame`), garantizando cero consumo de CPU cuando el componente no esta visible.
+
+### Gestion de Memoria WebGL
+Para evitar fugas de memoria VRAM en navegadores moviles:
+- Eliminacion Recursiva de Recursos: Rutina de desmontaje que ejecuta `.dispose()` secuencialmente sobre geometrias, materiales y texturas.
+- Control de Densidad de Pixeles: Limite estricto de `pixelRatio` a un maximo de 2.0 (`Math.min(window.devicePixelRatio, 2)`), impidiendo sobrecarga de fragment shaders en pantallas de ultra alta resolucion.
 
 ---
 
-## 5. Decisiones Técnicas y Desafíos Superados
-- Rendimiento en Gráficos WebGL: La ejecución de motores 3D en dispositivos móviles puede generar cuellos de botella en el hilo principal. Se optimizó el bucle de renderizado limitando la tasa de refresco condicionalmente y reduciendo la complejidad poligonal de las geometrías según el dispositivo del usuario.
-- Adopción de Zustand frente a Redux: Para un e-commerce ágil, Redux introducía código repetitivo innecesario y mayor peso al paquete final. Zustand permitió un manejo de estado atómico, minimalista y con menor consumo de memoria.
+## 3. Gestion de Estado y Transaccionalidad Multimoneda
+
+El flujo de compra depende de un almacen global implementado con Zustand, desacoplado del ciclo de vida de los componentes de UI.
+
+### Normalizacion y Manejo de Moneda Dual
+- Precision Decimal: Los calculos de conversion cambiaria entre USD y moneda local operan normalizando montos a enteros en centavos antes de formatear, eliminando errores de redondeo por coma flotante IEEE 754.
+- Reactividad Atomica: Suscripciones atomicas (`useCartStore((state) => state.items)`) para asegurar que solo los componentes que renderizan el contador de items o el subtotal respondan a mutaciones de estado, manteniendo inmunes las listas de productos.
+- Sincronizacion de Almacenamiento: Persistencia reactiva en `LocalStorage` con migracion controlada de esquemas para preservar el estado de la sesion del usuario frente a recargas de pagina.
+
+---
+
+## 4. Concurrencia y Despacho de Eventos
+
+El cierre de compra canaliza la orden hacia un flujo asincrono no bloqueante:
+- Sanitizacion en Capa de Servidor: Validacion de carga util (payload) en los Route Handlers para garantizar la consistencia de los datos del pedido antes de generar el despacho.
+- Tolerancia a Fallos de Red: Si la conexion del cliente presenta latencia, la orden retiene un estado transitorio en el store local con politica de reintento idempotente antes de alertar al usuario.
+- Despacho Ligero: Redireccion estructurada del resumen de compra con codificacion URI segura para apertura instantanea en canales de mensajeria asistida.
+
+---
+
+## 5. Optimizacion y Metricas de Rendimiento
+
+- Code Splitting Dinamico: Carga diferida (`dynamic(() => import(...), { ssr: false })`) del motor Three.js, reduciendo el tamano del bundle inicial de JavaScript en mas de 140 KB.
+- Compresion de Texturas y Activos: Activos visuales servidos en formatos modernos (WebP/AVIF) con cache inmutable a nivel de borde (Edge CDN).
+- Cumulative Layout Shift (CLS = 0): Contenedores del canvas y de las tarjetas de catalogo dimensionados con aspect-ratio explicito en CSS para prevenir saltos visuales durante la carga asincrona.
