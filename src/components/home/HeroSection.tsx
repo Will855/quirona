@@ -4,8 +4,24 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, ShoppingBag, Ruler, ShieldCheck, Truck } from 'lucide-react';
-import RetroHeroCanvas from './RetroHeroCanvas';
+import dynamic from 'next/dynamic';
 import { SiteConfig } from '@/types';
+
+const RetroHeroCanvas = dynamic(() => import('./RetroHeroCanvas'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center p-4">
+      <Image
+        src="/mascot_main_toy.png"
+        alt="Quirona Mascot"
+        width={300}
+        height={300}
+        priority
+        className="w-56 sm:w-64 md:w-72 h-auto object-contain drop-shadow-md animate-float select-none"
+      />
+    </div>
+  ),
+});
 
 interface HeroSectionProps {
   heroConfig?: SiteConfig['hero'];
@@ -25,9 +41,9 @@ export default function HeroSection({ heroConfig }: HeroSectionProps) {
 
   return (
     <section className="relative overflow-hidden bg-quirona-bg border-b-2 border-quirona-burgundy min-h-[calc(100dvh-5rem)] lg:h-[calc(100dvh-5rem)] flex items-center justify-center py-8 lg:py-0">
-      {/* Círculos decorativos de fondo con la paleta */}
-      <div className="absolute top-10 left-10 w-72 h-72 rounded-full bg-quirona-cream/40 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-quirona-yellow/30 blur-3xl pointer-events-none" />
+      {/* Círculos decorativos de fondo con la paleta optimizados para móviles */}
+      <div className="hidden sm:block absolute top-10 left-10 w-72 h-72 rounded-full bg-quirona-cream/40 blur-3xl pointer-events-none" />
+      <div className="hidden sm:block absolute bottom-10 right-10 w-96 h-96 rounded-full bg-quirona-yellow/30 blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full my-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">

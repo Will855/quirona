@@ -80,3 +80,17 @@ body {
   transform: translate(2px, 2px);
   box-shadow: 1px 1px 0px 0px #661716;
 }
+
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float {
+  animation: floatSlow 3.5s ease-in-out infinite;
+}
+

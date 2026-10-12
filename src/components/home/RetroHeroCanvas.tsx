@@ -44,12 +44,15 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
       alpha: true,
       powerPreference: 'high-performance',
     });
+    const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.5));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobileDevice ? 1.0 : 1.5));
     renderer.toneMapping = THREE.LinearToneMapping;
     renderer.toneMappingExposure = 1.0;
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.enabled = !isMobileDevice;
+    if (!isMobileDevice) {
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    }
     container.appendChild(renderer.domElement);
 
     // --- Studio Lighting: Ambient & Volume Definition ---
@@ -303,11 +306,18 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
     const resizeObserver = new ResizeObserver(onResize);
     resizeObserver.observe(container);
 
-    // --- Main Animation Loop (60 FPS) ---
-    let animationFrameId: number;
+    container.style.touchAction = 'pan-y';
+
+    // --- Main Animation Loop with Viewport Visibility Optimization ---
+    let animationFrameId = 0;
     const clock = new THREE.Clock();
+    let isVisible = true;
 
     const animate = () => {
+      if (!isVisible) {
+        animationFrameId = 0;
+        return;
+      }
       animationFrameId = requestAnimationFrame(animate);
       const elapsed = clock.getElapsedTime();
 
@@ -366,11 +376,27 @@ export default function RetroHeroCanvas({ className = '' }: RetroHeroCanvasProps
       }
     };
 
+    const intersectionObserver = new IntersectionObserver(
+      ([entry]) => {
+        const wasVisible = isVisible;
+        isVisible = entry.isIntersecting;
+        if (isVisible && !wasVisible && !animationFrameId) {
+          clock.start();
+          animate();
+        }
+      },
+      { threshold: 0.05 }
+    );
+    intersectionObserver.observe(container);
+
     animate();
 
     // --- Cleanup ---
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+      intersectionObserver.disconnect();
       resizeObserver.disconnect();
       container.removeEventListener('mousemove', onMouseMove);
       container.removeEventListener('mousedown', onMouseDown);

@@ -3,9 +3,13 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { X, Trash2, ShoppingBag, ArrowRight, Truck } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useCartStore } from '@/lib/store/useCartStore';
 import { formatUSD, formatVES, convertUSDToVES } from '@/lib/currency';
-import CheckoutModal from '@/components/checkout/CheckoutModal';
+
+const CheckoutModal = dynamic(() => import('@/components/checkout/CheckoutModal'), {
+  ssr: false,
+});
 
 export default function CartDrawer() {
   const {
@@ -203,11 +207,13 @@ export default function CartDrawer() {
       </div>
       )}
 
-      {/* Modal de checkout */}
-      <CheckoutModal
-        isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
-      />
+      {/* Modal de checkout montado bajo demanda */}
+      {isCheckoutOpen && (
+        <CheckoutModal
+          isOpen={isCheckoutOpen}
+          onClose={() => setIsCheckoutOpen(false)}
+        />
+      )}
     </>
   );
 }

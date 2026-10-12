@@ -3,11 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Flame } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import HeroSection from '@/components/home/HeroSection';
 import ProductCard from '@/components/catalog/ProductCard';
-import ProductModal from '@/components/catalog/ProductModal';
 import { MOCK_PRODUCTS } from '@/data/mockProducts';
 import { Product, Category, SiteConfig } from '@/types';
+
+const ProductModal = dynamic(() => import('@/components/catalog/ProductModal'), {
+  ssr: false,
+});
 
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
@@ -200,12 +204,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Modal interactivo de producto */}
-      <ProductModal
-        product={selectedProduct}
-        isOpen={!!selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-      />
+      {/* Modal interactivo de producto montado bajo demanda */}
+      {selectedProduct && (
+        <ProductModal
+          product={selectedProduct}
+          isOpen={!!selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
     </div>
   );
 }

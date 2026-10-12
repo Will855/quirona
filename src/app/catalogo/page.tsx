@@ -3,10 +3,14 @@
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Search, Filter, SlidersHorizontal, ShoppingBag, X } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import ProductCard from '@/components/catalog/ProductCard';
-import ProductModal from '@/components/catalog/ProductModal';
 import { MOCK_PRODUCTS, CATEGORIES } from '@/data/mockProducts';
 import { Product, ClothingSize, Category } from '@/types';
+
+const ProductModal = dynamic(() => import('@/components/catalog/ProductModal'), {
+  ssr: false,
+});
 
 function CatalogContent() {
   const searchParams = useSearchParams();
@@ -250,12 +254,14 @@ function CatalogContent() {
         </div>
       )}
 
-      {/* Modal de Detalle de Producto */}
-      <ProductModal
-        product={selectedProduct}
-        isOpen={!!selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-      />
+      {/* Modal de Detalle de Producto montado bajo demanda */}
+      {selectedProduct && (
+        <ProductModal
+          product={selectedProduct}
+          isOpen={!!selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
 
     </div>
   );
