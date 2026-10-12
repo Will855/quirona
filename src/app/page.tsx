@@ -6,7 +6,6 @@ import { ArrowRight, Flame } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import HeroSection from '@/components/home/HeroSection';
 import ProductCard from '@/components/catalog/ProductCard';
-import { MOCK_PRODUCTS } from '@/data/mockProducts';
 import { Product, Category, SiteConfig } from '@/types';
 
 const ProductModal = dynamic(() => import('@/components/catalog/ProductModal'), {
@@ -14,7 +13,7 @@ const ProductModal = dynamic(() => import('@/components/catalog/ProductModal'), 
 });
 
 export default function HomePage() {
-  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
+  const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [siteConfig, setSiteConfig] = useState<SiteConfig | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -118,36 +117,38 @@ export default function HomePage() {
       )}
 
       {/* 3. Novedades / Destacados */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-          <div>
-            <div className="text-xs font-black text-quirona-burgundy uppercase">
-              <span>Nuevos Lanzamientos</span>
+      {featuredProducts.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+            <div>
+              <div className="text-xs font-black text-quirona-burgundy uppercase">
+                <span>Nuevos Lanzamientos</span>
+              </div>
+              <h2 className="text-3xl font-black text-quirona-burgundy mt-1">
+                Prendas de Temporada
+              </h2>
             </div>
-            <h2 className="text-3xl font-black text-quirona-burgundy mt-1">
-              Prendas de Temporada
-            </h2>
+
+            <Link
+              href="/catalogo"
+              className="retro-btn inline-flex items-center gap-2 bg-quirona-yellow text-quirona-burgundy px-5 py-2 rounded-full font-extrabold text-xs border-2 border-quirona-burgundy retro-shadow-sm self-start sm:self-auto"
+            >
+              <span>Ver Catálogo Completo</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
 
-          <Link
-            href="/catalogo"
-            className="retro-btn inline-flex items-center gap-2 bg-quirona-yellow text-quirona-burgundy px-5 py-2 rounded-full font-extrabold text-xs border-2 border-quirona-burgundy retro-shadow-sm self-start sm:self-auto"
-          >
-            <span>Ver Catálogo Completo</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {featuredProducts.slice(0, 3).map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onSelect={(p) => setSelectedProduct(p)}
-            />
-          ))}
-        </div>
-      </section>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuredProducts.slice(0, 3).map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onSelect={(p) => setSelectedProduct(p)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 4. Banner promocional / Asesoría de Tallas */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -178,31 +179,33 @@ export default function HomePage() {
       </section>
 
       {/* 5. Más Vendidos */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-2 mb-8">
-          <div className="p-2 bg-quirona-yellow rounded-xl border-2 border-quirona-burgundy">
-            <Flame className="w-5 h-5 text-quirona-burgundy fill-quirona-burgundy" />
+      {bestSellers.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-2 mb-8">
+            <div className="p-2 bg-quirona-yellow rounded-xl border-2 border-quirona-burgundy">
+              <Flame className="w-5 h-5 text-quirona-burgundy fill-quirona-burgundy" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-black text-quirona-burgundy leading-none">
+                Favoritos de la Comunidad
+              </h2>
+              <p className="text-xs text-quirona-burgundy/70 mt-1">
+                Las prendas y accesorios más pedidos de la tienda
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-3xl font-black text-quirona-burgundy leading-none">
-              Favoritos de la Comunidad
-            </h2>
-            <p className="text-xs text-quirona-burgundy/70 mt-1">
-              Las prendas y accesorios más pedidos de la tienda
-            </p>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {bestSellers.slice(0, 3).map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onSelect={(p) => setSelectedProduct(p)}
-            />
-          ))}
-        </div>
-      </section>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {bestSellers.slice(0, 3).map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onSelect={(p) => setSelectedProduct(p)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Modal interactivo de producto montado bajo demanda */}
       {selectedProduct && (

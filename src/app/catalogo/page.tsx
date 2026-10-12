@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import { Search, Filter, SlidersHorizontal, ShoppingBag, X } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import ProductCard from '@/components/catalog/ProductCard';
-import { MOCK_PRODUCTS, CATEGORIES } from '@/data/mockProducts';
 import { Product, ClothingSize, Category } from '@/types';
 
 const ProductModal = dynamic(() => import('@/components/catalog/ProductModal'), {
@@ -16,8 +15,8 @@ function CatalogContent() {
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get('categoria') || 'all';
 
-  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
-  const [categories, setCategories] = useState<Category[]>(CATEGORIES);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
   const [selectedSize, setSelectedSize] = useState<ClothingSize | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
