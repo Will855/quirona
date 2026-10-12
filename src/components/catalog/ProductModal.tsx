@@ -184,8 +184,18 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
                         <button
                           key={colorVariant.colorName}
                           onClick={() => {
-                            // Buscar primera variante con ese color
-                            const match = variants.find((v) => v.colorName === colorVariant.colorName);
+                            // SEC-31: Al cambiar de color en el selector, sincronizar automáticamente con una variante disponible en stock
+                            const match =
+                              variants.find(
+                                (v) =>
+                                  v.colorName === colorVariant.colorName &&
+                                  v.size === currentVariant?.size &&
+                                  v.stock > 0
+                              ) ||
+                              variants.find(
+                                (v) => v.colorName === colorVariant.colorName && v.stock > 0
+                              ) ||
+                              variants.find((v) => v.colorName === colorVariant.colorName);
                             if (match) setSelectedVariantId(match.id);
                           }}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 text-xs font-bold transition-all ${
