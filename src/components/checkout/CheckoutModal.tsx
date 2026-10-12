@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { X } from 'lucide-react';
 import { useCartStore } from '@/lib/store/useCartStore';
@@ -45,6 +45,33 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const [savingReceipt, setSavingReceipt] = useState(false);
   const [receiptImageUrl, setReceiptImageUrl] = useState('');
   const [receiptSavedSuccessfully, setReceiptSavedSuccessfully] = useState(false);
+
+  // SEC-33: Limpieza y reseteo de estados de comprobante y pasos al cerrar y reabrir el modal
+  const resetReceiptAndSteps = useCallback(() => {
+    setStep('info');
+    setCreatedOrder(null);
+    setReferenceNumber('');
+    setReceiptUploaded(false);
+    setReceiptImageUrl('');
+    setReceiptSavedSuccessfully(false);
+    setSubmittingOrder(false);
+    setUploadingReceipt(false);
+    setSavingReceipt(false);
+    setCopiedField(null);
+    if (copyTimeoutRef.current) {
+      clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = null;
+    }
+  }, []);
+
+  const handleClose = () => {
+    resetReceiptAndSteps();
+    onClose();
+  };
+
+  useEffect(() => {
+    resetReceiptAndSteps();
+  }, [isOpen, resetReceiptAndSteps]);
 
   useEffect(() => {
     fetch('/api/site-config')
@@ -214,7 +241,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       <div className="bg-quirona-cream w-full max-w-2xl rounded-2xl border-3 border-quirona-burgundy retro-shadow-lg p-6 md:p-8 relative my-8">
         {/* Botón cerrar */}
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute top-4 right-4 p-2 rounded-full bg-quirona-bg border-2 border-quirona-burgundy text-quirona-burgundy hover:bg-quirona-yellow transition-colors z-10"
           aria-label="Cerrar modal de checkout"
         >
@@ -273,7 +300,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
             whatsappNumber={siteConfig?.whatsappNumber}
             onReceiptFileChange={handleReceiptFileChange}
             onSaveReceipt={handleSaveReceipt}
-            onClose={onClose}
+            onClose={handleClose}
           />
         )}
       </div>
