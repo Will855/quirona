@@ -29,6 +29,7 @@ export default function AdminProductModal({
   const [careInstructions, setCareInstructions] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [footwearUnit, setFootwearUnit] = useState<'in' | 'cm'>('in');
 
   // Variantes
   const [variants, setVariants] = useState<
@@ -64,6 +65,7 @@ export default function AdminProductModal({
     const isShoe = catId === 'calzado' || catObj?.slug === 'calzado';
 
     if (isShoe) {
+      setFootwearUnit('in');
       setVariants([
         { size: '37', colorName: 'Estándar', colorHex: '#FFDD48', stock: 3 },
         { size: '38', colorName: 'Estándar', colorHex: '#FFDD48', stock: 5 },
@@ -73,12 +75,12 @@ export default function AdminProductModal({
         { size: '42', colorName: 'Estándar', colorHex: '#FFDD48', stock: 3 },
       ]);
       setMeasurements([
-        { size: '37', length: '24.0', chest: '-', waist: '-', hip: '-' },
-        { size: '38', length: '24.5', chest: '-', waist: '-', hip: '-' },
-        { size: '39', length: '25.0', chest: '-', waist: '-', hip: '-' },
-        { size: '40', length: '26.0', chest: '-', waist: '-', hip: '-' },
-        { size: '41', length: '26.5', chest: '-', waist: '-', hip: '-' },
-        { size: '42', length: '27.5', chest: '-', waist: '-', hip: '-' },
+        { size: '37', length: '9.25', unit: 'in', chest: '-', waist: '-', hip: '-' },
+        { size: '38', length: '9.55', unit: 'in', chest: '-', waist: '-', hip: '-' },
+        { size: '39', length: '9.85', unit: 'in', chest: '-', waist: '-', hip: '-' },
+        { size: '40', length: '10.05', unit: 'in', chest: '-', waist: '-', hip: '-' },
+        { size: '41', length: '10.35', unit: 'in', chest: '-', waist: '-', hip: '-' },
+        { size: '42', length: '10.65', unit: 'in', chest: '-', waist: '-', hip: '-' },
       ]);
     } else if (catObj && !catObj.hasMeasurements) {
       setVariants([{ size: 'Única', colorName: 'Estándar', colorHex: '#FFDD48', stock: 10 }]);
@@ -102,15 +104,30 @@ export default function AdminProductModal({
     applyCategoryDefaults(newCatId);
   };
 
+  // Convertir unidad de calzado (Pulgadas <-> CM)
+  const handleToggleFootwearUnit = (newUnit: 'in' | 'cm') => {
+    if (newUnit === footwearUnit) return;
+    setFootwearUnit(newUnit);
+    setMeasurements((prev) =>
+      prev.map((m) => {
+        const num = parseFloat(m.length);
+        if (isNaN(num)) return { ...m, unit: newUnit };
+        const converted = newUnit === 'cm' ? (num * 2.54).toFixed(1) : (num / 2.54).toFixed(2);
+        return { ...m, length: converted, unit: newUnit };
+      })
+    );
+  };
+
   // Agregar talla dinámica
   const handleAddSize = () => {
     if (isFootwear) {
       const nextNum = variants.length > 0 ? (parseInt(variants[variants.length - 1].size) || 42) + 1 : 37;
       const sizeStr = nextNum.toString();
-      const lastLength = parseFloat(measurements[measurements.length - 1]?.length || '27.5');
-      const nextLength = (lastLength + 0.5).toFixed(1);
+      const lastLength = parseFloat(measurements[measurements.length - 1]?.length || (footwearUnit === 'in' ? '10.65' : '27.0'));
+      const step = footwearUnit === 'in' ? 0.3 : 0.8;
+      const nextLength = (lastLength + step).toFixed(footwearUnit === 'in' ? 2 : 1);
       setVariants([...variants, { size: sizeStr, colorName: 'Estándar', colorHex: '#FFDD48', stock: 5 }]);
-      setMeasurements([...measurements, { size: sizeStr, length: nextLength, chest: '-', waist: '-', hip: '-' }]);
+      setMeasurements([...measurements, { size: sizeStr, length: nextLength, unit: footwearUnit, chest: '-', waist: '-', hip: '-' }]);
     } else {
       const commonSizes = ['XS', 'S', 'M', 'L', 'XL', '2XL'];
       const nextSize = commonSizes.find((s) => !variants.some((v) => v.size === s)) || `Talla-${variants.length + 1}`;
@@ -176,6 +193,13 @@ export default function AdminProductModal({
         sku: `QRN-${v.size}-${idx}`,
       }));
 
+      const finalMeasurements = requiresMeasurements
+        ? measurements.map((m) => ({
+            ...m,
+            unit: isFootwear ? footwearUnit : 'cm',
+          }))
+        : undefined;
+
       const payload = {
         name,
         category: category || (categories[0]?.id || 'ropa'),
@@ -186,7 +210,7 @@ export default function AdminProductModal({
         careInstructions: careInstructions.trim() || 'Lavar con agua fría.',
         images: [imageUrl.trim()],
         variants: finalVariants,
-        measurements: requiresMeasurements ? measurements : undefined,
+        measurements: finalMeasurements,
         isNew: true,
       };
 
@@ -378,32 +402,60 @@ export default function AdminProductModal({
               </div>
             </div>
 
-            {/* Variantes de Calzado: Talla, Medida Plantilla (cm) y Stock */}
+            {/* Variantes de Calzado: Talla, Medida Plantilla y Stock */}
             {isFootwear ? (
               <div className="border-t-2 border-quirona-burgundy/20 pt-3 space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <label className="block text-xs font-black text-quirona-burgundy uppercase">
-                      Tallas de Calzado & Medidas de Plantilla (cm):
+                      Tallas de Calzado & Medidas de Plantilla:
                     </label>
                     <p className="text-[11px] text-quirona-burgundy/70 font-semibold">
-                      Indica la longitud en cm de cada número para que el cliente consulte su talla exacta.
+                      Indica la longitud en {footwearUnit === 'in' ? 'pulgadas (in / ")' : 'centímetros (cm)'} de cada número para que el cliente consulte su talla exacta.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleAddSize}
-                    className="retro-btn bg-quirona-yellow text-quirona-burgundy px-3 py-1 rounded-lg text-xs font-black border border-quirona-burgundy flex items-center gap-1 hover:bg-quirona-yellow-hover"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Agregar Talla</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {/* Switch / Toggle Unidad */}
+                    <div className="flex bg-quirona-bg rounded-lg border border-quirona-burgundy p-0.5 text-[10px] font-black">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleFootwearUnit('in')}
+                        className={`px-2 py-0.5 rounded transition-colors ${
+                          footwearUnit === 'in'
+                            ? 'bg-quirona-burgundy text-quirona-cream'
+                            : 'text-quirona-burgundy hover:bg-quirona-yellow/50'
+                        }`}
+                      >
+                        Pulgadas (in)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleFootwearUnit('cm')}
+                        className={`px-2 py-0.5 rounded transition-colors ${
+                          footwearUnit === 'cm'
+                            ? 'bg-quirona-burgundy text-quirona-cream'
+                            : 'text-quirona-burgundy hover:bg-quirona-yellow/50'
+                        }`}
+                      >
+                        Centímetros (cm)
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleAddSize}
+                      className="retro-btn bg-quirona-yellow text-quirona-burgundy px-3 py-1 rounded-lg text-xs font-black border border-quirona-burgundy flex items-center gap-1 hover:bg-quirona-yellow-hover"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Agregar Talla</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <div className="grid grid-cols-12 gap-2 text-[10px] font-black uppercase text-quirona-burgundy/70 px-1">
                     <span className="col-span-3">Número / Talla</span>
-                    <span className="col-span-5">Largo Plantilla (cm)</span>
+                    <span className="col-span-5">Largo Plantilla ({footwearUnit === 'in' ? 'in / "' : 'cm'})</span>
                     <span className="col-span-3">Stock (pares)</span>
                     <span className="col-span-1 text-center"></span>
                   </div>
@@ -411,7 +463,8 @@ export default function AdminProductModal({
                   {variants.map((v, i) => {
                     const meas = measurements.find((m) => m.size === v.size) || {
                       size: v.size,
-                      length: '25.0',
+                      length: footwearUnit === 'in' ? '9.85' : '25.0',
+                      unit: footwearUnit,
                     };
                     return (
                       <div
@@ -442,20 +495,22 @@ export default function AdminProductModal({
                         <div className="col-span-5 flex items-center gap-1">
                           <input
                             type="number"
-                            step="0.1"
+                            step={footwearUnit === 'in' ? '0.01' : '0.1'}
                             value={meas.length}
                             onChange={(e) => {
                               const val = e.target.value;
                               setMeasurements(
                                 measurements.map((m) =>
-                                  m.size === v.size ? { ...m, length: val } : m
+                                  m.size === v.size ? { ...m, length: val, unit: footwearUnit } : m
                                 )
                               );
                             }}
-                            placeholder="25.0"
+                            placeholder={footwearUnit === 'in' ? '9.85' : '25.0'}
                             className="w-full bg-quirona-cream border border-quirona-burgundy rounded-lg px-2 py-1 text-xs font-bold text-quirona-burgundy"
                           />
-                          <span className="text-[11px] font-bold text-quirona-burgundy/70">cm</span>
+                          <span className="text-[11px] font-bold text-quirona-burgundy/70">
+                            {footwearUnit === 'in' ? 'in' : 'cm'}
+                          </span>
                         </div>
 
                         <div className="col-span-3">

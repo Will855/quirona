@@ -22,10 +22,11 @@ export interface ProductVariant {
 
 export interface SizeMeasurement {
   size: ClothingSize;
-  chest?: string;    // Pecho / Busto en cm
-  waist?: string;    // Cintura en cm
-  hip?: string;      // Cadera en cm
-  length: string;   // Largo de prenda o plantilla en cm
+  unit?: 'in' | 'cm'; // Unidad de medida (pulgadas / inches o centímetros)
+  chest?: string;    // Pecho / Busto
+  waist?: string;    // Cintura
+  hip?: string;      // Cadera
+  length: string;   // Largo de prenda o plantilla
 }
 
 export interface Product {

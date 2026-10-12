@@ -227,7 +227,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
                       onClick={() => setShowSizeGuide(true)}
                       className="text-xs font-extrabold text-quirona-burgundy underline hover:text-quirona-burgundy-light flex items-center gap-1"
                     >
-                      <Ruler className="w-3.5 h-3.5" /> Guía de Medidas (cm)
+                      <Ruler className="w-3.5 h-3.5" /> Guía de Tallas y Medidas
                     </button>
                   )}
                 </div>
