@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 import { Order, BankDetails } from '@/types';
 import { formatUSD, formatVES } from '@/lib/currency';
 
-const resendApiKey = process.env.RESEND_API_KEY;
+const resendApiKey = process.env.RESEND_API_KEY || process.env.RESEND;
 const resendFromEmail = process.env.RESEND_FROM_EMAIL || 'Quirona Store <onboarding@resend.dev>';
 
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
