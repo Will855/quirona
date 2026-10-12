@@ -165,187 +165,200 @@ export default function AdminProductModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-quirona-burgundy/60 backdrop-blur-sm overflow-y-auto animate-fadeIn">
-      <div className="bg-quirona-cream w-full max-w-2xl rounded-3xl border-3 border-quirona-burgundy retro-shadow-lg p-6 md:p-8 relative my-8">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full bg-quirona-bg border-2 border-quirona-burgundy text-quirona-burgundy hover:bg-quirona-yellow"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        <h2 className="text-2xl font-black text-quirona-burgundy mb-4">
-          Subir Nueva Prenda / Producto
-        </h2>
-
-        <form onSubmit={handleSubmit} className="space-y-4 text-left">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-quirona-burgundy uppercase mb-1">
-                Nombre del Producto *
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="Ej. Sudadera Oversize Quirona"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-bold text-quirona-burgundy focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-quirona-burgundy uppercase mb-1">
-                Categoría *
-              </label>
-              <select
-                value={category}
-                onChange={(e) => handleCategoryChange(e.target.value)}
-                className="w-full bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-bold text-quirona-burgundy focus:outline-none"
-              >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name} {cat.hasMeasurements ? '(Con tallas)' : '(Sin medidas)'}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-quirona-burgundy uppercase mb-1">
-                Precio Base USD *
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                required
-                placeholder="25.00"
-                value={basePriceUSD}
-                onChange={(e) => setBasePriceUSD(e.target.value)}
-                className="w-full bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-bold text-quirona-burgundy focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-quirona-burgundy uppercase mb-1">
-                Precio Anterior USD (Opcional tachado)
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                placeholder="30.00"
-                value={originalPriceUSD}
-                onChange={(e) => setOriginalPriceUSD(e.target.value)}
-                className="w-full bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-bold text-quirona-burgundy focus:outline-none"
-              />
-            </div>
-          </div>
-
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-quirona-burgundy/60 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-quirona-cream w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl border-3 border-quirona-burgundy retro-shadow-lg overflow-hidden relative">
+        {/* Encabezado Fijo */}
+        <div className="px-5 sm:px-6 py-4 border-b-2 border-quirona-burgundy/15 flex items-center justify-between bg-quirona-cream flex-shrink-0">
           <div>
-            <label className="block text-xs font-bold text-quirona-burgundy uppercase mb-1">
-              Descripción
-            </label>
-            <textarea
-              rows={2}
-              placeholder="Detalles del corte, confección, materiales y estilo..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-medium text-quirona-burgundy focus:outline-none"
-            />
+            <span className="text-[10px] font-black uppercase tracking-wider text-quirona-burgundy bg-quirona-yellow px-2 py-0.5 rounded-full border border-quirona-burgundy">
+              Inventario Quirona
+            </span>
+            <h2 className="text-xl sm:text-2xl font-black text-quirona-burgundy mt-0.5">
+              Subir Nueva Prenda / Producto
+            </h2>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-full bg-quirona-bg border-2 border-quirona-burgundy text-quirona-burgundy hover:bg-quirona-yellow transition-colors"
+            aria-label="Cerrar ventana"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-          {/* Composición y Cuidados */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-quirona-burgundy uppercase mb-1">
-                Composición / Material
-              </label>
-              <input
-                type="text"
-                placeholder="Ej. 100% Algodón pesado (French Terry)"
-                value={material}
-                onChange={(e) => setMaterial(e.target.value)}
-                className="w-full bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-medium text-quirona-burgundy focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-quirona-burgundy uppercase mb-1">
-                Cuidados de la Prenda
-              </label>
-              <input
-                type="text"
-                placeholder="Ej. Lavar con agua fría, no planchar estampado"
-                value={careInstructions}
-                onChange={(e) => setCareInstructions(e.target.value)}
-                className="w-full bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-medium text-quirona-burgundy focus:outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Subida de Imagen */}
-          <div>
-            <label className="block text-xs font-bold text-quirona-burgundy uppercase mb-1">
-              Foto de la Prenda
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="URL de la imagen o sube un archivo →"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                className="flex-1 bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-medium text-quirona-burgundy focus:outline-none"
-              />
-
-              <label className="retro-btn cursor-pointer bg-quirona-yellow text-quirona-burgundy px-4 py-2 rounded-xl font-extrabold text-xs border-2 border-quirona-burgundy flex items-center gap-1.5">
-                <Upload className="w-4 h-4" />
-                <span>{uploadingImage ? 'Subiendo...' : 'Subir'}</span>
+        {/* Formulario con cuerpo scrolleable y barra de acciones inferior fija */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 text-left">
+          <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-4 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-quirona-burgundy uppercase mb-1">
+                  Nombre del Producto *
+                </label>
                 <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageFileUpload}
-                  disabled={uploadingImage}
+                  type="text"
+                  required
+                  placeholder="Ej. Sudadera Oversize Quirona"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-bold text-quirona-burgundy focus:outline-none"
                 />
-              </label>
-            </div>
-          </div>
+              </div>
 
-          {/* Variantes de Talla y Stock según la categoría */}
-          <div className="border-t border-quirona-burgundy/20 pt-3">
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-black text-quirona-burgundy uppercase">
-                {requiresMeasurements ? 'Tallas y Stock Disponible:' : 'Stock Disponible (Talla Única):'}
-              </label>
-              {!requiresMeasurements && (
-                <span className="text-[10px] font-bold text-quirona-burgundy/70 bg-quirona-bg px-2 py-0.5 rounded border border-quirona-burgundy/20">
-                  Categoría sin medidas corporales
-                </span>
-              )}
+              <div>
+                <label className="block text-xs font-bold text-quirona-burgundy uppercase mb-1">
+                  Categoría *
+                </label>
+                <select
+                  value={category}
+                  onChange={(e) => handleCategoryChange(e.target.value)}
+                  className="w-full bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-bold text-quirona-burgundy focus:outline-none"
+                >
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name} {cat.hasMeasurements ? '(Con tallas)' : '(Sin medidas)'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-quirona-burgundy uppercase mb-1">
+                  Precio Base USD *
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  placeholder="25.00"
+                  value={basePriceUSD}
+                  onChange={(e) => setBasePriceUSD(e.target.value)}
+                  className="w-full bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-bold text-quirona-burgundy focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-quirona-burgundy uppercase mb-1">
+                  Precio Anterior USD (Opcional tachado)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="30.00"
+                  value={originalPriceUSD}
+                  onChange={(e) => setOriginalPriceUSD(e.target.value)}
+                  className="w-full bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-bold text-quirona-burgundy focus:outline-none"
+                />
+              </div>
             </div>
 
-            <div className={`grid ${requiresMeasurements ? 'grid-cols-3' : 'grid-cols-1 max-w-xs'} gap-2`}>
-              {variants.map((v, i) => (
-                <div key={i} className="bg-quirona-bg p-2.5 rounded-xl border border-quirona-burgundy/40">
-                  <div className="text-xs font-black text-quirona-burgundy">
-                    {requiresMeasurements ? `Talla ${v.size}` : 'Unidades en Inventario'}
-                  </div>
+            <div>
+              <label className="block text-xs font-bold text-quirona-burgundy uppercase mb-1">
+                Descripción
+              </label>
+              <textarea
+                rows={2}
+                placeholder="Detalles del corte, confección, materiales y estilo..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-medium text-quirona-burgundy focus:outline-none"
+              />
+            </div>
+
+            {/* Composición y Cuidados */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-quirona-burgundy uppercase mb-1">
+                  Composición / Material
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej. 100% Algodón pesado (French Terry)"
+                  value={material}
+                  onChange={(e) => setMaterial(e.target.value)}
+                  className="w-full bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-medium text-quirona-burgundy focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-quirona-burgundy uppercase mb-1">
+                  Cuidados de la Prenda
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej. Lavar con agua fría, no planchar estampado"
+                  value={careInstructions}
+                  onChange={(e) => setCareInstructions(e.target.value)}
+                  className="w-full bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-medium text-quirona-burgundy focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Subida de Imagen */}
+            <div>
+              <label className="block text-xs font-bold text-quirona-burgundy uppercase mb-1">
+                Foto de la Prenda
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="URL de la imagen o sube un archivo →"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  className="flex-1 bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-medium text-quirona-burgundy focus:outline-none"
+                />
+
+                <label className="retro-btn cursor-pointer bg-quirona-yellow text-quirona-burgundy px-4 py-2 rounded-xl font-extrabold text-xs border-2 border-quirona-burgundy flex items-center gap-1.5 hover:bg-quirona-yellow-hover">
+                  <Upload className="w-4 h-4" />
+                  <span>{uploadingImage ? 'Subiendo...' : 'Subir'}</span>
                   <input
-                    type="number"
-                    min="0"
-                    value={v.stock}
-                    onChange={(e) => {
-                      const updated = [...variants];
-                      updated[i].stock = Math.max(0, parseInt(e.target.value) || 0);
-                      setVariants(updated);
-                    }}
-                    className="w-full mt-1 bg-quirona-cream border border-quirona-burgundy rounded-lg px-2 py-1 text-xs font-extrabold text-quirona-burgundy"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageFileUpload}
+                    disabled={uploadingImage}
                   />
-                </div>
-              ))}
+                </label>
+              </div>
+            </div>
+
+            {/* Variantes de Talla y Stock según la categoría */}
+            <div className="border-t border-quirona-burgundy/20 pt-3">
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-black text-quirona-burgundy uppercase">
+                  {requiresMeasurements ? 'Tallas y Stock Disponible:' : 'Stock Disponible (Talla Única):'}
+                </label>
+                {!requiresMeasurements && (
+                  <span className="text-[10px] font-bold text-quirona-burgundy/70 bg-quirona-bg px-2 py-0.5 rounded border border-quirona-burgundy/20">
+                    Categoría sin medidas corporales
+                  </span>
+                )}
+              </div>
+
+              <div className={`grid ${requiresMeasurements ? 'grid-cols-3' : 'grid-cols-1 max-w-xs'} gap-2`}>
+                {variants.map((v, i) => (
+                  <div key={i} className="bg-quirona-bg p-2.5 rounded-xl border border-quirona-burgundy/40">
+                    <div className="text-xs font-black text-quirona-burgundy">
+                      {requiresMeasurements ? `Talla ${v.size}` : 'Unidades en Inventario'}
+                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      value={v.stock}
+                      onChange={(e) => {
+                        const updated = [...variants];
+                        updated[i].stock = Math.max(0, parseInt(e.target.value) || 0);
+                        setVariants(updated);
+                      }}
+                      className="w-full mt-1 bg-quirona-cream border border-quirona-burgundy rounded-lg px-2 py-1 text-xs font-extrabold text-quirona-burgundy"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-quirona-burgundy/20 flex items-center justify-end gap-3">
+          {/* Barra de Acciones Fija Inferior */}
+          <div className="px-5 sm:px-6 py-3.5 border-t-2 border-quirona-burgundy/15 bg-quirona-cream flex items-center justify-end gap-3 flex-shrink-0">
             <button
               type="button"
               onClick={onClose}
@@ -356,7 +369,7 @@ export default function AdminProductModal({
             <button
               type="submit"
               disabled={submitting || uploadingImage || !imageUrl.trim()}
-              className="retro-btn bg-quirona-yellow text-quirona-burgundy px-6 py-2.5 rounded-full font-black text-xs border-2 border-quirona-burgundy retro-shadow disabled:opacity-50"
+              className="retro-btn bg-quirona-yellow text-quirona-burgundy px-6 py-2.5 rounded-full font-black text-xs border-2 border-quirona-burgundy retro-shadow disabled:opacity-50 hover:bg-quirona-yellow-hover"
             >
               {uploadingImage ? 'Subiendo imagen...' : submitting ? 'Guardando...' : 'Publicar Producto'}
             </button>

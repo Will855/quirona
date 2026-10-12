@@ -20,8 +20,8 @@ export default function AdminReceiptModal({ receipt, onClose }: AdminReceiptModa
   if (!receipt) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-quirona-burgundy/70 backdrop-blur-sm overflow-y-auto animate-fadeIn">
-      <div className="bg-quirona-cream w-full max-w-lg rounded-3xl border-3 border-quirona-burgundy retro-shadow-lg p-6 relative my-8 space-y-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-quirona-burgundy/70 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-quirona-cream w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-3xl border-3 border-quirona-burgundy retro-shadow-lg p-6 relative my-auto space-y-4">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 rounded-full bg-quirona-bg border-2 border-quirona-burgundy text-quirona-burgundy hover:bg-quirona-yellow"

@@ -90,8 +90,8 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-quirona-burgundy/60 backdrop-blur-sm overflow-y-auto animate-fadeIn">
-        <div className="bg-quirona-cream w-full max-w-3xl rounded-2xl border-3 border-quirona-burgundy retro-shadow-lg p-6 md:p-8 relative my-8">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-quirona-burgundy/60 backdrop-blur-sm animate-fadeIn">
+        <div className="bg-quirona-cream w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl border-3 border-quirona-burgundy retro-shadow-lg p-6 md:p-8 relative my-auto">
           
           {/* Botón cerrar */}
           <button
