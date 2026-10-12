@@ -42,17 +42,26 @@ export default function AdminOrdersTable({
   const [orderStatusFilter, setOrderStatusFilter] = useState<string>('ALL');
   const [orderSearchTerm, setOrderSearchTerm] = useState('');
 
+  // SEC-15: En el filtrado filteredOrders, comprobación de campos nulos en customer.fullName y orderCode
   const filteredOrders = orders.filter((order) => {
+    if (!order) return false;
     if (orderStatusFilter !== 'ALL' && order.status !== orderStatusFilter) {
       return false;
     }
     if (orderSearchTerm.trim()) {
       const term = orderSearchTerm.toLowerCase();
-      const matchesCode = order.orderCode.toLowerCase().includes(term);
-      const matchesCustomer = order.customer.fullName.toLowerCase().includes(term);
-      const matchesPhone = order.customer.whatsapp.toLowerCase().includes(term);
-      const matchesRef = order.paymentReceipt?.referenceNumber?.toLowerCase().includes(term);
-      return matchesCode || matchesCustomer || matchesPhone || !!matchesRef;
+      const matchesCode = Boolean(order.orderCode && order.orderCode.toLowerCase().includes(term));
+      const matchesCustomer = Boolean(
+        order.customer?.fullName && order.customer.fullName.toLowerCase().includes(term)
+      );
+      const matchesPhone = Boolean(
+        order.customer?.whatsapp && order.customer.whatsapp.toLowerCase().includes(term)
+      );
+      const matchesRef = Boolean(
+        order.paymentReceipt?.referenceNumber &&
+          order.paymentReceipt.referenceNumber.toLowerCase().includes(term)
+      );
+      return matchesCode || matchesCustomer || matchesPhone || matchesRef;
     }
     return true;
   });
@@ -201,14 +210,16 @@ export default function AdminOrdersTable({
       ) : (
         <div className="space-y-4">
           {filteredOrders.map((order) => {
-            const cleanPhone = order.customer.whatsapp.replace(/\D/g, '');
+            // SEC-16: Sanitización de número de WhatsApp para enlace wa.me eliminando guiones y espacios
+            const rawPhone = order.customer?.whatsapp || '';
+            const cleanPhone = rawPhone.replace(/[\s-]/g, '').replace(/\D/g, '');
             const waNumber = cleanPhone.startsWith('58')
               ? cleanPhone
               : cleanPhone.startsWith('0')
               ? `58${cleanPhone.substring(1)}`
               : `58${cleanPhone}`;
             const waChatUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(
-              `¡Hola ${order.customer.fullName}! Te escribimos de Quirona Store acerca de tu pedido *${order.orderCode}*`
+              `¡Hola ${order.customer?.fullName || 'Cliente'}! Te escribimos de Quirona Store acerca de tu pedido *${order.orderCode || ''}*`
             )}`;
 
             return (
@@ -273,11 +284,11 @@ export default function AdminOrdersTable({
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-quirona-burgundy/70 font-semibold">Nombre:</span>
-                        <span className="font-extrabold text-quirona-burgundy">{order.customer.fullName}</span>
+                        <span className="font-extrabold text-quirona-burgundy">{order.customer?.fullName || 'Cliente'}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-quirona-burgundy/70 font-semibold">Cédula / DNI:</span>
-                        <span className="font-mono font-bold text-quirona-burgundy">{order.customer.idDocument}</span>
+                        <span className="font-mono font-bold text-quirona-burgundy">{order.customer?.idDocument || 'N/A'}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-quirona-burgundy/70 font-semibold">WhatsApp:</span>
@@ -288,7 +299,7 @@ export default function AdminOrdersTable({
                           className="font-extrabold text-green-700 hover:underline flex items-center gap-1 bg-green-50 px-2 py-0.5 rounded border border-green-300"
                         >
                           <MessageCircle className="w-3 h-3" />
-                          <span>{order.customer.whatsapp}</span>
+                          <span>{order.customer?.whatsapp || 'N/A'}</span>
                         </a>
                       </div>
                       <div className="flex justify-between items-start pt-1 border-t border-quirona-burgundy/10">
@@ -297,8 +308,8 @@ export default function AdminOrdersTable({
                           {order.deliveryMethod === 'retiro'
                             ? 'Retiro Personal (Gratis)'
                             : order.deliveryMethod === 'delivery'
-                            ? `Delivery: ${order.customer.city} (${order.customer.address || 'Sin dirección'})`
-                            : `Envío Nacional: ${order.customer.city} (${order.customer.address || 'Sin dirección'})`}
+                            ? `Delivery: ${order.customer?.city || ''} (${order.customer?.address || 'Sin dirección'})`
+                            : `Envío Nacional: ${order.customer?.city || ''} (${order.customer?.address || 'Sin dirección'})`}
                         </span>
                       </div>
                     </div>
@@ -346,7 +357,7 @@ export default function AdminOrdersTable({
                                   onViewReceipt({
                                     imageUrl: order.paymentReceipt!.receiptImageUrl!,
                                     orderCode: order.orderCode,
-                                    clientName: order.customer.fullName,
+                                    clientName: order.customer?.fullName || 'Cliente',
                                     referenceNumber: order.paymentReceipt?.referenceNumber,
                                   })
                                 }
