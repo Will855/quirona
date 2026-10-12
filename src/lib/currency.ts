@@ -21,7 +21,9 @@ export function formatVES(amountVES: number): string {
     currencyDisplay: 'narrowSymbol',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amountVES).replace('VES', 'Bs.');
+  })
+    .format(amountVES)
+    .replace(/VES|Bs\.S/g, 'Bs.');
 }
 
 export function formatDualPrice(amountUSD: number, rate: number = DEFAULT_EXCHANGE_RATE) {

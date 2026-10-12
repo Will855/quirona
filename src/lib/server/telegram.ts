@@ -77,16 +77,36 @@ export async function sendTelegramPhoto(photoUrl: string, caption: string, optio
   }
 }
 
+function escapeTelegramHtml(str: string = ''): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function sanitizeTelegramWaPhone(phone: string = ''): string {
+  const digits = phone.replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('58')) {
+    const without58 = digits.slice(2).replace(/^0+/, '');
+    return '58' + without58;
+  }
+  const trimmed = digits.replace(/^0+/, '');
+  return '58' + trimmed;
+}
+
 /**
  * Notificación inmediata al admin cuando entra un nuevo pedido
  */
 export async function notifyNewOrder(order: Order) {
-  const customerName = order.customer.fullName || (order.customer as any).name || 'Cliente';
-  const customerPhone = order.customer.whatsapp || (order.customer as any).phone || '';
-  const cleanPhone = customerPhone.replace(/\D/g, '');
+  const rawCustomerName = order.customer.fullName || (order.customer as any).name || 'Cliente';
+  const customerName = escapeTelegramHtml(rawCustomerName);
+  const rawPhone = order.customer.whatsapp || (order.customer as any).phone || '';
+  const customerPhone = escapeTelegramHtml(rawPhone);
+  const cleanPhone = sanitizeTelegramWaPhone(rawPhone);
   const waLink = cleanPhone
-    ? `https://wa.me/${cleanPhone.startsWith('58') ? cleanPhone : '58' + cleanPhone}?text=${encodeURIComponent(
-        `¡Hola ${customerName}! Te escribimos de Quirona Store sobre tu pedido ${order.orderCode}.`
+    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+        `¡Hola ${rawCustomerName}! Te escribimos de Quirona Store sobre tu pedido ${order.orderCode}.`
       )}`
     : null;
 
@@ -109,19 +129,19 @@ export async function notifyNewOrder(order: Order) {
   const itemsList = order.items
     .map(
       (item) =>
-        `• <b>1x ${item.productName}</b> (Talla: <code>${item.size}</code>, Color: ${item.colorName}) — ${formatUSD(
+        `• <b>${item.quantity}x ${escapeTelegramHtml(item.productName)}</b> (Talla: <code>${escapeTelegramHtml(item.size)}</code>, Color: ${escapeTelegramHtml(item.colorName)}) — ${formatUSD(
           item.unitPriceUSD * item.quantity
         )}`
     )
     .join('\n');
 
-  const text = `🛍️ <b>¡NUEVO PEDIDO RECIBIDO!</b> <code>${order.orderCode}</code>
+  const text = `🛍️ <b>¡NUEVO PEDIDO RECIBIDO!</b> <code>${escapeTelegramHtml(order.orderCode)}</code>
 ━━━━━━━━━━━━━━━━━━━━
 👤 <b>Cliente:</b> ${customerName}
 📱 <b>Teléfono:</b> <code>${customerPhone}</code>
-✉️ <b>Email:</b> ${order.customer.email || 'No indicado'}
-📍 <b>Entrega:</b> ${deliveryLabel}
-<i>${order.customer.address || ''}</i>
+✉️ <b>Email:</b> ${escapeTelegramHtml(order.customer.email || 'No indicado')}
+📍 <b>Entrega:</b> ${escapeTelegramHtml(deliveryLabel)}
+<i>${escapeTelegramHtml(order.customer.address || '')}</i>
 
 📦 <b>Prendas Solicitadas:</b>
 ${itemsList}
@@ -129,9 +149,9 @@ ${itemsList}
 💰 <b>Total del Pedido:</b>
 • En Divisas: <b>${formatUSD(order.subtotalUSD)}</b>
 • En Bolívares: <b>${formatVES(order.subtotalVES)}</b> (Tasa: ${order.exchangeRateUsed})
-💳 <b>Método de Pago:</b> ${paymentLabel}
+💳 <b>Método de Pago:</b> ${escapeTelegramHtml(paymentLabel)}
 ━━━━━━━━━━━━━━━━━━━━
-Estado: 🟡 <b>${order.status}</b>`;
+Estado: 🟡 <b>${escapeTelegramHtml(order.status)}</b>`;
 
   const inlineKeyboard: Array<Array<{ text: string; url?: string }>> = [];
 
@@ -149,22 +169,26 @@ Estado: 🟡 <b>${order.status}</b>`;
  */
 export async function notifyReceiptUploaded(
   order: Order,
-  receiptData: { referenceNumber: string; receiptUrl?: string }
+  receiptData: { referenceNumber?: string; receiptUrl?: string; receiptImageUrl?: string }
 ) {
-  const customerName = order.customer.fullName || (order.customer as any).name || 'Cliente';
-  const customerPhone = order.customer.whatsapp || (order.customer as any).phone || '';
-  const cleanPhone = customerPhone.replace(/\D/g, '');
+  const rawCustomerName = order.customer.fullName || (order.customer as any).name || 'Cliente';
+  const customerName = escapeTelegramHtml(rawCustomerName);
+  const rawPhone = order.customer.whatsapp || (order.customer as any).phone || '';
+  const cleanPhone = sanitizeTelegramWaPhone(rawPhone);
   const waLink = cleanPhone
-    ? `https://wa.me/${cleanPhone.startsWith('58') ? cleanPhone : '58' + cleanPhone}?text=${encodeURIComponent(
-        `¡Hola ${customerName}! Hemos recibido el comprobante de tu pedido ${order.orderCode}. Estamos verificando tu pago.`
+    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+        `¡Hola ${rawCustomerName}! Hemos recibido el comprobante de tu pedido ${order.orderCode}. Estamos verificando tu pago.`
       )}`
     : null;
 
+  const photoUrl = receiptData.receiptImageUrl || receiptData.receiptUrl;
+  const refText = escapeTelegramHtml(receiptData.referenceNumber || 'Sin número');
+
   const text = `🧾 <b>¡COMPROBANTE DE PAGO REGISTRADO!</b>
 ━━━━━━━━━━━━━━━━━━━━
-📦 <b>Pedido:</b> <code>${order.orderCode}</code>
+📦 <b>Pedido:</b> <code>${escapeTelegramHtml(order.orderCode)}</code>
 👤 <b>Cliente:</b> ${customerName}
-🔢 <b>Referencia:</b> <code>${receiptData.referenceNumber || 'Sin número'}</code>
+🔢 <b>Referencia:</b> <code>${refText}</code>
 💰 <b>Monto:</b> ${formatUSD(order.subtotalUSD)} / ${formatVES(order.subtotalVES)}
 ━━━━━━━━━━━━━━━━━━━━
 👉 Ingresa al panel para verificar la transferencia y aprobar el pedido.`;
@@ -174,8 +198,8 @@ export async function notifyReceiptUploaded(
     inlineKeyboard.push([{ text: '💬 Notificar por WhatsApp', url: waLink }]);
   }
 
-  if (receiptData.receiptUrl) {
-    return await sendTelegramPhoto(receiptData.receiptUrl, text, {
+  if (photoUrl) {
+    return await sendTelegramPhoto(photoUrl, text, {
       reply_markup: inlineKeyboard.length ? { inline_keyboard: inlineKeyboard } : undefined,
     });
   }

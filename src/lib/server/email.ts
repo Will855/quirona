@@ -7,6 +7,26 @@ const resendFromEmail = process.env.RESEND_FROM_EMAIL || 'Quirona Store <onboard
 
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
+function escapeHtml(str: string = ''): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function sanitizeWaPhone(phone: string = ''): string {
+  const digits = phone.replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('58')) {
+    const without58 = digits.slice(2).replace(/^0+/, '');
+    return '58' + without58;
+  }
+  const trimmed = digits.replace(/^0+/, '');
+  return '58' + trimmed;
+}
+
 /**
  * Enviar código de rescate técnico de 6 dígitos al correo del desarrollador master
  */
@@ -20,6 +40,7 @@ export async function sendRescueCodeEmail(params: {
     return { success: false, reason: 'unconfigured', devCode: params.rescueCode };
   }
 
+  const safeClientIp = params.clientIp ? escapeHtml(params.clientIp) : 'No detectada';
   const html = `
   <!DOCTYPE html>
   <html>
@@ -50,7 +71,7 @@ export async function sendRescueCodeEmail(params: {
           Código Temporal de Un Solo Uso
         </span>
         <div style="font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; font-size: 38px; font-weight: 900; color: #FFDD48; letter-spacing: 8px;">
-          ${params.rescueCode}
+          ${escapeHtml(params.rescueCode)}
         </div>
         <span style="color: rgba(255, 236, 185, 0.7); font-size: 11px; margin-top: 8px; display: block;">
           ⏱️ Válido durante los próximos 10 minutos
@@ -60,7 +81,7 @@ export async function sendRescueCodeEmail(params: {
       <div style="background-color: rgba(102, 23, 22, 0.08); border-left: 4px solid #661716; padding: 12px 16px; border-radius: 8px; font-size: 12px; line-height: 1.5; margin-bottom: 24px;">
         <strong>Información de Seguridad:</strong><br>
         Al validar este código, el factor 2FA del cliente se reiniciará para que pueda escanear un nuevo código QR en su dispositivo.<br>
-        IP de origen: <code>${params.clientIp || 'No detectada'}</code>
+        IP de origen: <code>${safeClientIp}</code>
       </div>
 
       <div style="text-align: center; font-size: 11px; color: rgba(102, 23, 22, 0.6); border-top: 1px solid rgba(102, 23, 22, 0.2); padding-top: 16px;">
@@ -72,12 +93,16 @@ export async function sendRescueCodeEmail(params: {
   `;
 
   try {
-    const data = await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: resendFromEmail,
       to: params.to,
       subject: `[Quirona Security] Código de Rescate Técnico: ${params.rescueCode}`,
       html,
     });
+    if (error) {
+      console.error('[Resend] Error al enviar código de rescate:', error);
+      return { success: false, error: (error as any).message || String(error) };
+    }
     return { success: true, data };
   } catch (error: any) {
     console.error('[Resend] Error al enviar código de rescate:', error.message);
@@ -105,8 +130,8 @@ export async function sendOrderConfirmationToCustomer(params: {
       (item) => `
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid rgba(102, 23, 22, 0.15); font-size: 13px;">
-          <strong>${item.productName}</strong><br>
-          <span style="font-size: 11px; color: rgba(102, 23, 22, 0.75);">Talla: ${item.size} | Color: ${item.colorName}</span>
+          <strong>${escapeHtml(item.productName)}</strong><br>
+          <span style="font-size: 11px; color: rgba(102, 23, 22, 0.75);">Talla: ${escapeHtml(item.size)} | Color: ${escapeHtml(item.colorName)}</span>
         </td>
         <td style="padding: 10px; border-bottom: 1px solid rgba(102, 23, 22, 0.15); font-size: 13px; text-align: center;">
           ${item.quantity}
@@ -119,8 +144,9 @@ export async function sendOrderConfirmationToCustomer(params: {
     )
     .join('');
 
-  const waLink = params.whatsappNumber
-    ? `https://wa.me/${params.whatsappNumber}?text=${encodeURIComponent(
+  const cleanPhone = sanitizeWaPhone(params.whatsappNumber || '');
+  const waLink = cleanPhone
+    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
         `¡Hola Quirona! Te escribo sobre mi pedido ${params.order.orderCode}.`
       )}`
     : null;
@@ -137,10 +163,10 @@ export async function sendOrderConfirmationToCustomer(params: {
           ¡Pedido Registrado con Éxito!
         </span>
         <h1 style="font-size: 26px; font-weight: 900; margin: 12px 0 4px 0; color: #661716;">
-          Gracias por tu compra, ${params.order.customer.fullName}
+          Gracias por tu compra, ${escapeHtml(params.order.customer.fullName)}
         </h1>
         <p style="font-size: 14px; margin: 0; color: rgba(102, 23, 22, 0.8);">
-          Tu código de orden es: <strong style="font-family: monospace; font-size: 16px;">${params.order.orderCode}</strong>
+          Tu código de orden es: <strong style="font-family: monospace; font-size: 16px;">${escapeHtml(params.order.orderCode)}</strong>
         </p>
       </div>
 
@@ -181,8 +207,22 @@ export async function sendOrderConfirmationToCustomer(params: {
         </p>
         ${
           params.bankDetails?.pagoMovil
+            ? `<div style="font-size: 12px; background: rgba(255,255,255,0.7); padding: 8px 12px; border-radius: 8px; border: 1px solid #661716; margin-bottom: 6px;">
+                <strong>Pago Móvil:</strong> Banco ${escapeHtml(params.bankDetails.pagoMovil.bank)} | Tel: ${escapeHtml(params.bankDetails.pagoMovil.phone)} | C.I/RIF: ${escapeHtml(params.bankDetails.pagoMovil.idDocument)}
+              </div>`
+            : ''
+        }
+        ${
+          params.bankDetails?.transferencia
+            ? `<div style="font-size: 12px; background: rgba(255,255,255,0.7); padding: 8px 12px; border-radius: 8px; border: 1px solid #661716; margin-bottom: 6px;">
+                <strong>Transferencia:</strong> Banco ${escapeHtml(params.bankDetails.transferencia.bank)} | Cuenta: ${escapeHtml(params.bankDetails.transferencia.accountNumber)} (${escapeHtml(params.bankDetails.transferencia.accountType)}) | Titular: ${escapeHtml(params.bankDetails.transferencia.beneficiary)} | C.I/RIF: ${escapeHtml(params.bankDetails.transferencia.idDocument)}
+              </div>`
+            : ''
+        }
+        ${
+          params.bankDetails?.zelle
             ? `<div style="font-size: 12px; background: rgba(255,255,255,0.7); padding: 8px 12px; border-radius: 8px; border: 1px solid #661716;">
-                <strong>Pago Móvil:</strong> Banco ${params.bankDetails.pagoMovil.bank} | Tel: ${params.bankDetails.pagoMovil.phone} | C.I/RIF: ${params.bankDetails.pagoMovil.idDocument}
+                <strong>Zelle:</strong> Correo: ${escapeHtml(params.bankDetails.zelle.email)} | Titular: ${escapeHtml(params.bankDetails.zelle.holder)}
               </div>`
             : ''
         }
@@ -207,12 +247,16 @@ export async function sendOrderConfirmationToCustomer(params: {
   `;
 
   try {
-    const data = await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: resendFromEmail,
       to: customerEmail,
       subject: `¡Recibimos tu pedido ${params.order.orderCode}! — Quirona Store`,
       html,
     });
+    if (error) {
+      console.error('[Resend] Error enviando correo al cliente:', error);
+      return { success: false, error: (error as any).message || String(error) };
+    }
     return { success: true, data };
   } catch (error: any) {
     console.error('[Resend] Error enviando correo al cliente:', error.message);
@@ -230,11 +274,12 @@ export async function sendOrderNotificationToAdmin(params: {
 }) {
   if (!resend) return { success: false, reason: 'unconfigured' };
 
-  const customerName = params.order.customer.fullName;
+  const rawCustomerName = params.order.customer.fullName || 'Cliente';
+  const customerName = escapeHtml(rawCustomerName);
   const itemsList = params.order.items
     .map(
       (item) =>
-        `<li><strong>1x ${item.productName}</strong> (Talla: ${item.size}, Color: ${item.colorName}) — ${formatUSD(
+        `<li><strong>${item.quantity}x ${escapeHtml(item.productName)}</strong> (Talla: ${escapeHtml(item.size)}, Color: ${escapeHtml(item.colorName)}) — ${formatUSD(
           item.unitPriceUSD * item.quantity
         )}</li>`
     )
@@ -247,16 +292,16 @@ export async function sendOrderNotificationToAdmin(params: {
   <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #DAD6BB; padding: 24px; margin: 0; color: #661716;">
     <div style="max-width: 560px; margin: 0 auto; background-color: #FFECB9; border: 3px solid #661716; border-radius: 20px; padding: 28px; box-shadow: 6px 6px 0px #661716;">
       <h2 style="font-size: 20px; font-weight: 900; margin-top: 0;">
-        🛍️ ¡Nuevo Pedido Recibido! <code>${params.order.orderCode}</code>
+        🛍️ ¡Nuevo Pedido Recibido! <code>${escapeHtml(params.order.orderCode)}</code>
       </h2>
       <hr style="border: 0; border-top: 2px solid #661716; margin: 16px 0;">
 
       <p style="font-size: 13px; line-height: 1.6;">
         👤 <strong>Cliente:</strong> ${customerName}<br>
-        📱 <strong>WhatsApp:</strong> <code>${params.order.customer.whatsapp}</code><br>
-        ✉️ <strong>Email:</strong> ${params.order.customer.email || 'No indicado'}<br>
-        📍 <strong>Entrega:</strong> ${params.order.deliveryMethod} (${params.order.customer.city})<br>
-        <i>${params.order.customer.address}</i>
+        📱 <strong>WhatsApp:</strong> <code>${escapeHtml(params.order.customer.whatsapp)}</code><br>
+        ✉️ <strong>Email:</strong> ${escapeHtml(params.order.customer.email || 'No indicado')}<br>
+        📍 <strong>Entrega:</strong> ${escapeHtml(params.order.deliveryMethod)} (${escapeHtml(params.order.customer.city)})<br>
+        <i>${escapeHtml(params.order.customer.address || 'Sin dirección especificada')}</i>
       </p>
 
       <h4 style="font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Prendas Solicitadas:</h4>
@@ -267,12 +312,12 @@ export async function sendOrderNotificationToAdmin(params: {
       <div style="background-color: #FFFFFF; border: 2px solid #661716; padding: 14px; border-radius: 12px; margin: 16px 0; font-size: 13px;">
         💰 <strong>Total en Divisas:</strong> ${formatUSD(params.order.subtotalUSD)}<br>
         💵 <strong>Total en Bolívares:</strong> ${formatVES(params.order.subtotalVES)} (Tasa: ${params.order.exchangeRateUsed})<br>
-        💳 <strong>Método:</strong> ${params.order.paymentMethod}
+        💳 <strong>Método:</strong> ${escapeHtml(params.order.paymentMethod)}
       </div>
 
       <div style="text-align: center; margin-top: 20px;">
         <span style="font-size: 12px; font-weight: bold; background: #FFDD48; padding: 6px 16px; border-radius: 9999px; border: 2px solid #661716;">
-          Estado: ${params.order.status}
+          Estado: ${escapeHtml(params.order.status)}
         </span>
       </div>
     </div>
@@ -281,12 +326,16 @@ export async function sendOrderNotificationToAdmin(params: {
   `;
 
   try {
-    const data = await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: resendFromEmail,
       to: params.adminEmail,
-      subject: `[Nuevo Pedido] ${params.order.orderCode} - ${formatUSD(params.order.subtotalUSD)} (${customerName})`,
+      subject: `[Nuevo Pedido] ${params.order.orderCode} - ${formatUSD(params.order.subtotalUSD)} (${rawCustomerName})`,
       html,
     });
+    if (error) {
+      console.error('[Resend] Error enviando correo al admin:', error);
+      return { success: false, error: (error as any).message || String(error) };
+    }
     return { success: true, data };
   } catch (error: any) {
     console.error('[Resend] Error enviando correo al admin:', error.message);
@@ -314,11 +363,11 @@ export async function sendReceiptConfirmationToCustomer(params: {
         🧾 Comprobante de Pago Recibido
       </h2>
       <p style="font-size: 13px; line-height: 1.6;">
-        Hola, <strong>${params.order.customer.fullName}</strong>. Hemos registrado el comprobante de tu pedido <strong>${params.order.orderCode}</strong> con número de referencia:
+        Hola, <strong>${escapeHtml(params.order.customer.fullName)}</strong>. Hemos registrado el comprobante de tu pedido <strong>${escapeHtml(params.order.orderCode)}</strong> con número de referencia:
       </p>
 
       <div style="background-color: #661716; color: #FFDD48; border-radius: 12px; padding: 14px; text-align: center; font-size: 22px; font-weight: 900; letter-spacing: 2px; font-family: monospace;">
-        ${params.referenceNumber || 'Comprobante Adjunto'}
+        ${escapeHtml(params.referenceNumber || 'Comprobante Adjunto')}
       </div>
 
       <p style="font-size: 13px; line-height: 1.6; margin-top: 16px;">
@@ -334,12 +383,16 @@ export async function sendReceiptConfirmationToCustomer(params: {
   `;
 
   try {
-    const data = await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: resendFromEmail,
       to: customerEmail,
       subject: `Comprobante de pago recibido — Pedido ${params.order.orderCode}`,
       html,
     });
+    if (error) {
+      console.error('[Resend] Error enviando comprobante al cliente:', error);
+      return { success: false, error: (error as any).message || String(error) };
+    }
     return { success: true, data };
   } catch (error: any) {
     console.error('[Resend] Error enviando comprobante al cliente:', error.message);
@@ -353,9 +406,12 @@ export async function sendReceiptConfirmationToCustomer(params: {
 export async function sendReceiptNotificationToAdmin(params: {
   adminEmail: string;
   order: Order;
-  receiptData: { referenceNumber: string; receiptUrl?: string };
+  receiptData: { referenceNumber?: string; receiptUrl?: string; receiptImageUrl?: string };
 }) {
   if (!resend) return { success: false, reason: 'unconfigured' };
+
+  const receiptUrl = params.receiptData.receiptImageUrl || params.receiptData.receiptUrl;
+  const refText = escapeHtml(params.receiptData.referenceNumber || 'Sin número');
 
   const html = `
   <!DOCTYPE html>
@@ -364,18 +420,18 @@ export async function sendReceiptNotificationToAdmin(params: {
   <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #DAD6BB; padding: 24px; margin: 0; color: #661716;">
     <div style="max-width: 560px; margin: 0 auto; background-color: #FFECB9; border: 3px solid #661716; border-radius: 20px; padding: 28px; box-shadow: 6px 6px 0px #661716;">
       <h2 style="font-size: 20px; font-weight: 900; margin-top: 0;">
-        🧾 Comprobante Registrado: <code>${params.order.orderCode}</code>
+        🧾 Comprobante Registrado: <code>${escapeHtml(params.order.orderCode)}</code>
       </h2>
       <p style="font-size: 13px; line-height: 1.6;">
-        👤 <strong>Cliente:</strong> ${params.order.customer.fullName}<br>
-        🔢 <strong>Referencia:</strong> <code>${params.receiptData.referenceNumber || 'Sin número'}</code><br>
+        👤 <strong>Cliente:</strong> ${escapeHtml(params.order.customer.fullName)}<br>
+        🔢 <strong>Referencia:</strong> <code>${refText}</code><br>
         💰 <strong>Monto:</strong> ${formatUSD(params.order.subtotalUSD)} / ${formatVES(params.order.subtotalVES)}
       </p>
 
       ${
-        params.receiptData.receiptUrl
+        receiptUrl
           ? `<div style="text-align: center; margin: 16px 0;">
-              <a href="${params.receiptData.receiptUrl}" target="_blank" style="display: inline-block; background-color: #661716; color: #FFECB9; font-weight: bold; font-size: 12px; padding: 10px 20px; border-radius: 8px; text-decoration: none;">
+              <a href="${escapeHtml(receiptUrl)}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background-color: #661716; color: #FFECB9; font-weight: bold; font-size: 12px; padding: 10px 20px; border-radius: 8px; text-decoration: none;">
                 🔍 Ver Capture del Comprobante
               </a>
             </div>`
@@ -391,12 +447,16 @@ export async function sendReceiptNotificationToAdmin(params: {
   `;
 
   try {
-    const data = await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: resendFromEmail,
       to: params.adminEmail,
-      subject: `[Comprobante de Pago] Pedido ${params.order.orderCode} - Ref: ${params.receiptData.referenceNumber}`,
+      subject: `[Comprobante de Pago] Pedido ${params.order.orderCode} - Ref: ${params.receiptData.referenceNumber || 'N/A'}`,
       html,
     });
+    if (error) {
+      console.error('[Resend] Error enviando comprobante al admin:', error);
+      return { success: false, error: (error as any).message || String(error) };
+    }
     return { success: true, data };
   } catch (error: any) {
     console.error('[Resend] Error enviando comprobante al admin:', error.message);

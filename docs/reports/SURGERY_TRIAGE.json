@@ -112,5 +112,77 @@
     "archivo": "src/components/layout/Navbar.tsx",
     "severidad": "BAJA",
     "descripcion": "Formato y visualización del badge de prendas en carrito."
+  },
+  {
+    "id": "SEC-45",
+    "archivo": "src/components/admin/AdminSiteConfigTab.tsx",
+    "severidad": "ALTA",
+    "descripcion": "Secuestro de Submit por Formulario Padre Único: Presionar Enter en inputs de tasa o contraseña envía involuntariamente la configuración general."
+  },
+  {
+    "id": "SEC-46",
+    "archivo": "src/components/admin/AdminSiteConfigTab.tsx",
+    "severidad": "ALTA",
+    "descripcion": "Desincronización del Store Global: handleForceRateSync y handleApplyCustomRate no actualizan useCartStore con la nueva tasa de cambio."
+  },
+  {
+    "id": "SEC-47",
+    "archivo": "src/components/admin/AdminSiteConfigTab.tsx",
+    "severidad": "MEDIA",
+    "descripcion": "Omisión de la Sección Beneficios: La sub-pestaña omite los 6 campos del contrato SiteConfig.benefits usados por Footer.tsx."
+  },
+  {
+    "id": "SEC-48",
+    "archivo": "src/components/admin/AdminSiteConfigTab.tsx",
+    "severidad": "MEDIA",
+    "descripcion": "Campos Omitidos en Hero: No se exponen en la interfaz secondaryButtonText ni floatingBadgeBottom, consumidos por HeroSection.tsx."
+  },
+  {
+    "id": "SEC-49",
+    "archivo": "src/components/admin/AdminSiteConfigTab.tsx",
+    "severidad": "MEDIA",
+    "descripcion": "Campos Faltantes en Datos Bancarios: Omisión de storeName, pagoMovil.beneficiary, transferencia.accountType y efectivoNotes."
+  },
+  {
+    "id": "SEC-50",
+    "archivo": "src/components/admin/AdminSiteConfigTab.tsx",
+    "severidad": "MEDIA",
+    "descripcion": "Validación Débil y Falta de Confirmación en Claves: Ausencia de confirmPassword y de validación cliente de longitud mínima (>= 6)."
+  },
+  {
+    "id": "SEC-51",
+    "archivo": "src/components/admin/AdminSiteConfigTab.tsx",
+    "severidad": "BAJA",
+    "descripcion": "Carga Perezosa Desconectada para BCV y Credenciales: Cargas atadas únicamente a clics repetitivos de navegación entre pestañas."
+  },
+  {
+    "id": "SEC-52",
+    "archivo": "src/components/admin/AdminSiteConfigTab.tsx",
+    "severidad": "BAJA",
+    "descripcion": "Timeouts sin Limpieza en Desmontaje: setTimeout sin referencias ni cancelación en unmount."
+  },
+  {
+    "id": "SEC-53",
+    "archivo": "src/components/admin/AdminSiteConfigTab.tsx",
+    "severidad": "BAJA",
+    "descripcion": "Falta de Asociación label - input (htmlFor / id): Dificulta el foco accesible en campos del formulario."
+  },
+  {
+    "id": "SEC-54",
+    "archivo": "src/components/admin/AdminSiteConfigTab.tsx",
+    "severidad": "BAJA",
+    "descripcion": "Botón Superior Guardar Todo Activo en Pestañas Ajenas: Permanece visible y activo en Notificaciones y Seguridad."
+  },
+  {
+    "id": "SEC-55",
+    "archivo": "src/components/admin/AdminSiteConfigTab.tsx",
+    "severidad": "MEDIA",
+    "descripcion": "Monolito de 1,301 Líneas: Excesivo acoplamiento de 5 sub-pestañas y 21 estados en un único componente."
+  },
+  {
+    "id": "SEC-56",
+    "archivo": "src/components/admin/AdminSiteConfigTab.tsx",
+    "severidad": "BAJA",
+    "descripcion": "Mezcla Inconsistente de alert() y Banners Inline: Alertas bloqueantes en lugar de retro toasts integrados."
   }
 ]

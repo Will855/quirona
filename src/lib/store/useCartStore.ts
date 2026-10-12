@@ -32,6 +32,10 @@ export const useCartStore = create<CartState>()(
       exchangeRate: DEFAULT_EXCHANGE_RATE,
 
       addItem: (newItem) => {
+        if (!newItem || newItem.availableStock <= 0) {
+          return;
+        }
+
         set((state) => {
           const existingIndex = state.items.findIndex(
             (item) => item.productId === newItem.productId && item.variantId === newItem.variantId
@@ -41,17 +45,23 @@ export const useCartStore = create<CartState>()(
             const updatedItems = [...state.items];
             const currentItem = updatedItems[existingIndex];
             const newQty = Math.min(
-              currentItem.quantity + newItem.quantity,
+              currentItem.quantity + (newItem.quantity || 1),
               newItem.availableStock
             );
             updatedItems[existingIndex] = {
               ...currentItem,
+              availableStock: newItem.availableStock,
+              unitPriceUSD: newItem.unitPriceUSD,
               quantity: newQty,
             };
             return { items: updatedItems, isOpen: true };
           }
 
-          return { items: [...state.items, newItem], isOpen: true };
+          const clampedQty = Math.max(1, Math.min(newItem.quantity || 1, newItem.availableStock));
+          return {
+            items: [...state.items, { ...newItem, quantity: clampedQty }],
+            isOpen: true,
+          };
         });
       },
 
@@ -63,7 +73,8 @@ export const useCartStore = create<CartState>()(
 
       updateQuantity: (itemId, quantity) => {
         set((state) => {
-          if (quantity <= 0) {
+          const targetItem = state.items.find((item) => item.id === itemId);
+          if (!targetItem || quantity <= 0 || targetItem.availableStock <= 0) {
             return { items: state.items.filter((item) => item.id !== itemId) };
           }
           return {
@@ -82,7 +93,11 @@ export const useCartStore = create<CartState>()(
       closeCart: () => set({ isOpen: false }),
       toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
 
-      setExchangeRate: (rate) => set({ exchangeRate: rate }),
+      setExchangeRate: (rate) => {
+        if (typeof rate === 'number' && Number.isFinite(rate) && rate > 0) {
+          set({ exchangeRate: rate });
+        }
+      },
 
       getTotalItems: () => {
         return get().items.reduce((acc, item) => acc + item.quantity, 0);
