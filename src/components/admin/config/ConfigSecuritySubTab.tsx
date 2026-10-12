@@ -51,6 +51,8 @@ export default function ConfigSecuritySubTab() {
   const [mfaSetupData, setMfaSetupData] = useState<{ qrCode: string; secret: string } | null>(null);
   const [mfaVerifyCode, setMfaVerifyCode] = useState('');
   const [copiedMfaSecret, setCopiedMfaSecret] = useState(false);
+  const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
+  const [unlinkPassword, setUnlinkPassword] = useState('');
 
   const fetchRateInfo = async () => {
     try {
@@ -174,9 +176,10 @@ export default function ConfigSecuritySubTab() {
     }
   };
 
-  // Desvincular y desactivar 2FA
-  const handleReset2FA = async () => {
-    if (!confirm('¿Seguro que deseas desvincular y desactivar Google Authenticator? Podrás iniciar sesión directamente solo con tu correo y contraseña.')) {
+  // Desvincular y desactivar 2FA con confirmación obligatoria de contraseña
+  const handleConfirmUnlink2FA = async () => {
+    if (!unlinkPassword) {
+      alert('Debes ingresar tu contraseña actual para confirmar la desvinculación.');
       return;
     }
 
@@ -186,7 +189,7 @@ export default function ConfigSecuritySubTab() {
       const res = await fetch('/api/admin/credentials', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reset2fa: true }),
+        body: JSON.stringify({ reset2fa: true, currentPassword: unlinkPassword }),
       });
       const data = await res.json();
       if (data.success) {
@@ -194,11 +197,13 @@ export default function ConfigSecuritySubTab() {
           success: true,
           msg: 'Google Authenticator desvinculado con éxito. Ahora puedes acceder directamente solo con correo y contraseña.',
         });
+        setShowUnlinkConfirm(false);
+        setUnlinkPassword('');
         setLinkingMfa(false);
         setMfaSetupData(null);
         fetchCredentials();
       } else {
-        setCredFeedback({ success: false, msg: data.error || 'Error al desvincular 2FA.' });
+        setCredFeedback({ success: false, msg: data.error || 'Contraseña incorrecta. No se pudo desvincular 2FA.' });
       }
     } catch {
       setCredFeedback({ success: false, msg: 'Error de conexión al desvincular 2FA.' });
@@ -507,17 +512,66 @@ export default function ConfigSecuritySubTab() {
                     Tu cuenta tiene activa la autenticación en dos pasos. Al iniciar sesión, se requiere el código dinámico de 6 dígitos generado por tu aplicación móvil.
                   </p>
 
-                  <div className="pt-1">
-                    <button
-                      type="button"
-                      onClick={handleReset2FA}
-                      disabled={savingCreds}
-                      className="retro-btn bg-red-50 text-red-700 px-4 py-2 rounded-xl font-black text-xs border-2 border-red-300 hover:bg-red-100 flex items-center gap-2 disabled:opacity-50"
-                    >
-                      <ShieldAlert className="w-3.5 h-3.5" />
-                      <span>{savingCreds ? 'Desvinculando...' : 'Desvincular / Desactivar Google Authenticator'}</span>
-                    </button>
-                  </div>
+                  {showUnlinkConfirm ? (
+                    <div className="space-y-2.5 p-3 bg-red-50 rounded-xl border-2 border-red-200 animate-fadeIn">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black text-red-800 uppercase flex items-center gap-1.5">
+                          <Lock className="w-3.5 h-3.5" />
+                          <span>Confirmación de Seguridad Requerida</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowUnlinkConfirm(false);
+                            setUnlinkPassword('');
+                          }}
+                          className="text-red-700 hover:text-red-900 p-1"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <p className="text-[10px] text-red-800 leading-tight">
+                        Para evitar desvinculaciones no autorizadas, introduce tu <strong>contraseña actual</strong> para confirmar:
+                      </p>
+
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="password"
+                          placeholder="Tu contraseña actual"
+                          value={unlinkPassword}
+                          onChange={(e) => setUnlinkPassword(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleConfirmUnlink2FA();
+                            }
+                          }}
+                          className="flex-1 bg-white border-2 border-red-300 rounded-xl px-3 py-1.5 text-xs font-bold text-quirona-burgundy focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleConfirmUnlink2FA}
+                          disabled={savingCreds || !unlinkPassword}
+                          className="retro-btn bg-red-600 text-white px-3.5 py-1.5 rounded-xl font-black text-xs border border-red-700 hover:bg-red-700 disabled:opacity-50"
+                        >
+                          {savingCreds ? 'Validando...' : 'Confirmar Desvinculación'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowUnlinkConfirm(true)}
+                        disabled={savingCreds}
+                        className="retro-btn bg-red-50 text-red-700 px-4 py-2 rounded-xl font-black text-xs border-2 border-red-300 hover:bg-red-100 flex items-center gap-2 disabled:opacity-50"
+                      >
+                        <ShieldAlert className="w-3.5 h-3.5" />
+                        <span>Desvincular / Desactivar Google Authenticator</span>
+                      </button>
+                    </div>
+                  )}
                 </>
               ) : linkingMfa && mfaSetupData ? (
                 <div className="space-y-3 p-3 bg-quirona-bg rounded-xl border border-quirona-burgundy/30 animate-fadeIn">

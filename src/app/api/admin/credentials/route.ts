@@ -39,11 +39,11 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    // 1. Si se quiere cambiar correo o contraseña, exigir la contraseña actual
-    if (newPassword || newEmail) {
+    // 1. Si se quiere cambiar correo, contraseña o desvincular 2FA, exigir obligatoriamente la contraseña actual
+    if (newPassword || newEmail || reset2fa) {
       if (!currentPassword || !verifyPassword(currentPassword, authData)) {
         return NextResponse.json(
-          { success: false, error: 'La contraseña actual es incorrecta.' },
+          { success: false, error: 'Debes ingresar tu contraseña actual correcta para realizar esta acción de seguridad.' },
           { status: 400 }
         );
       }
