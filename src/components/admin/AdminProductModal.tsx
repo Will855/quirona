@@ -102,6 +102,11 @@ export default function AdminProductModal({
     e.preventDefault();
     if (!name || !basePriceUSD) return;
 
+    if (!imageUrl.trim()) {
+      alert('Debes subir o indicar al menos una imagen de la prenda antes de publicarla.');
+      return;
+    }
+
     try {
       setSubmitting(true);
 
@@ -121,10 +126,7 @@ export default function AdminProductModal({
         originalPriceUSD: originalPriceUSD ? parseFloat(originalPriceUSD) : undefined,
         description,
         material,
-        images: [
-          imageUrl ||
-            'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=800&auto=format&fit=crop',
-        ],
+        images: [imageUrl.trim()],
         variants: finalVariants,
         measurements: requiresMeasurements ? measurements : undefined,
         isNew: true,
@@ -322,10 +324,10 @@ export default function AdminProductModal({
             </button>
             <button
               type="submit"
-              disabled={submitting}
-              className="retro-btn bg-quirona-yellow text-quirona-burgundy px-6 py-2.5 rounded-full font-black text-xs border-2 border-quirona-burgundy retro-shadow"
+              disabled={submitting || uploadingImage || !imageUrl.trim()}
+              className="retro-btn bg-quirona-yellow text-quirona-burgundy px-6 py-2.5 rounded-full font-black text-xs border-2 border-quirona-burgundy retro-shadow disabled:opacity-50"
             >
-              {submitting ? 'Guardando...' : 'Publicar Producto'}
+              {uploadingImage ? 'Subiendo imagen...' : submitting ? 'Guardando...' : 'Publicar Producto'}
             </button>
           </div>
         </form>

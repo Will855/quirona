@@ -189,23 +189,23 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       const data = await res.json();
       if (data.success && data.order) {
         setCreatedOrder(data.order);
+        setStep('success');
+        clearCart();
+
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#FFDD48', '#661716', '#DAD6BB', '#FFECB9'],
+        });
       } else {
-        setCreatedOrder(newOrder);
+        alert('No se pudo registrar el pedido en el servidor: ' + (data.error || 'Intenta de nuevo.'));
       }
     } catch (err) {
       console.error('Error enviando orden al servidor:', err);
-      setCreatedOrder(newOrder);
+      alert('Error de conexión al enviar el pedido. Verifica tu conexión a internet e intenta nuevamente.');
     } finally {
       setSubmittingOrder(false);
-      setStep('success');
-      clearCart();
-
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#FFDD48', '#661716', '#DAD6BB', '#FFECB9'],
-      });
     }
   };
 

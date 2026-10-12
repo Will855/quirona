@@ -56,6 +56,13 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
   const priceVES = Math.round(product.basePriceUSD * exchangeRate * 100) / 100;
   const isOutOfStock = !currentVariant || currentVariant.stock <= 0;
 
+  // Ajustar cantidad automáticamente si la variante activa tiene menor stock (SEC-27)
+  useEffect(() => {
+    if (currentVariant && currentVariant.stock > 0 && quantity > currentVariant.stock) {
+      setQuantity(currentVariant.stock);
+    }
+  }, [currentVariant?.id, currentVariant?.stock, quantity]);
+
   const handleAddToCart = () => {
     if (!currentVariant || isOutOfStock) return;
 
