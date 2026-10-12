@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Upload, Ruler, CheckCircle2 } from 'lucide-react';
+import { X, Upload, Ruler, CheckCircle2, Plus, Trash2 } from 'lucide-react';
 import { Category, ClothingSize, ProductVariant, SizeMeasurement } from '@/types';
 
 interface AdminProductModalProps {
@@ -49,26 +49,82 @@ export default function AdminProductModal({
   // Sincronizar categoría inicial
   useEffect(() => {
     if (categories.length > 0 && !category) {
-      setCategory(categories[0].id);
+      const initialCat = categories[0].id;
+      setCategory(initialCat);
+      applyCategoryDefaults(initialCat);
     }
   }, [categories, category]);
 
   const selectedCatObj = categories.find((c) => c.id === category);
+  const isFootwear = category === 'calzado' || selectedCatObj?.slug === 'calzado';
   const requiresMeasurements = selectedCatObj ? selectedCatObj.hasMeasurements : true;
 
-  // Si cambia a una categoría sin medidas, ajustar variantes predeterminadas
-  const handleCategoryChange = (newCatId: string) => {
-    setCategory(newCatId);
-    const catObj = categories.find((c) => c.id === newCatId);
-    if (catObj && !catObj.hasMeasurements) {
+  const applyCategoryDefaults = (catId: string) => {
+    const catObj = categories.find((c) => c.id === catId);
+    const isShoe = catId === 'calzado' || catObj?.slug === 'calzado';
+
+    if (isShoe) {
+      setVariants([
+        { size: '37', colorName: 'Estándar', colorHex: '#FFDD48', stock: 3 },
+        { size: '38', colorName: 'Estándar', colorHex: '#FFDD48', stock: 5 },
+        { size: '39', colorName: 'Estándar', colorHex: '#FFDD48', stock: 6 },
+        { size: '40', colorName: 'Estándar', colorHex: '#FFDD48', stock: 6 },
+        { size: '41', colorName: 'Estándar', colorHex: '#FFDD48', stock: 4 },
+        { size: '42', colorName: 'Estándar', colorHex: '#FFDD48', stock: 3 },
+      ]);
+      setMeasurements([
+        { size: '37', length: '24.0', chest: '-', waist: '-', hip: '-' },
+        { size: '38', length: '24.5', chest: '-', waist: '-', hip: '-' },
+        { size: '39', length: '25.0', chest: '-', waist: '-', hip: '-' },
+        { size: '40', length: '26.0', chest: '-', waist: '-', hip: '-' },
+        { size: '41', length: '26.5', chest: '-', waist: '-', hip: '-' },
+        { size: '42', length: '27.5', chest: '-', waist: '-', hip: '-' },
+      ]);
+    } else if (catObj && !catObj.hasMeasurements) {
       setVariants([{ size: 'Única', colorName: 'Estándar', colorHex: '#FFDD48', stock: 10 }]);
-    } else if (catObj && catObj.hasMeasurements && variants.length === 1 && variants[0].size === 'Única') {
+      setMeasurements([]);
+    } else {
       setVariants([
         { size: 'S', colorName: 'Estándar', colorHex: '#FFDD48', stock: 5 },
         { size: 'M', colorName: 'Estándar', colorHex: '#FFDD48', stock: 8 },
         { size: 'L', colorName: 'Estándar', colorHex: '#FFDD48', stock: 4 },
       ]);
+      setMeasurements([
+        { size: 'S', chest: '110', waist: '110', hip: '110', length: '70' },
+        { size: 'M', chest: '116', waist: '116', hip: '116', length: '73' },
+        { size: 'L', chest: '122', waist: '122', hip: '122', length: '76' },
+      ]);
     }
+  };
+
+  const handleCategoryChange = (newCatId: string) => {
+    setCategory(newCatId);
+    applyCategoryDefaults(newCatId);
+  };
+
+  // Agregar talla dinámica
+  const handleAddSize = () => {
+    if (isFootwear) {
+      const nextNum = variants.length > 0 ? (parseInt(variants[variants.length - 1].size) || 42) + 1 : 37;
+      const sizeStr = nextNum.toString();
+      const lastLength = parseFloat(measurements[measurements.length - 1]?.length || '27.5');
+      const nextLength = (lastLength + 0.5).toFixed(1);
+      setVariants([...variants, { size: sizeStr, colorName: 'Estándar', colorHex: '#FFDD48', stock: 5 }]);
+      setMeasurements([...measurements, { size: sizeStr, length: nextLength, chest: '-', waist: '-', hip: '-' }]);
+    } else {
+      const commonSizes = ['XS', 'S', 'M', 'L', 'XL', '2XL'];
+      const nextSize = commonSizes.find((s) => !variants.some((v) => v.size === s)) || `Talla-${variants.length + 1}`;
+      setVariants([...variants, { size: nextSize, colorName: 'Estándar', colorHex: '#FFDD48', stock: 5 }]);
+      setMeasurements([...measurements, { size: nextSize, chest: '125', waist: '125', hip: '125', length: '78' }]);
+    }
+  };
+
+  // Eliminar talla
+  const handleRemoveSize = (index: number) => {
+    if (variants.length <= 1) return;
+    const targetSize = variants[index].size;
+    setVariants(variants.filter((_, i) => i !== index));
+    setMeasurements(measurements.filter((m) => m.size !== targetSize));
   };
 
   // Subir imagen local
@@ -150,6 +206,7 @@ export default function AdminProductModal({
         setMaterial('');
         setCareInstructions('');
         setImageUrl('');
+        applyCategoryDefaults(category);
         onProductCreated();
         onClose();
       } else {
@@ -321,40 +378,316 @@ export default function AdminProductModal({
               </div>
             </div>
 
-            {/* Variantes de Talla y Stock según la categoría */}
-            <div className="border-t border-quirona-burgundy/20 pt-3">
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-black text-quirona-burgundy uppercase">
-                  {requiresMeasurements ? 'Tallas y Stock Disponible:' : 'Stock Disponible (Talla Única):'}
-                </label>
-                {!requiresMeasurements && (
+            {/* Variantes de Calzado: Talla, Medida Plantilla (cm) y Stock */}
+            {isFootwear ? (
+              <div className="border-t-2 border-quirona-burgundy/20 pt-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="block text-xs font-black text-quirona-burgundy uppercase">
+                      Tallas de Calzado & Medidas de Plantilla (cm):
+                    </label>
+                    <p className="text-[11px] text-quirona-burgundy/70 font-semibold">
+                      Indica la longitud en cm de cada número para que el cliente consulte su talla exacta.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddSize}
+                    className="retro-btn bg-quirona-yellow text-quirona-burgundy px-3 py-1 rounded-lg text-xs font-black border border-quirona-burgundy flex items-center gap-1 hover:bg-quirona-yellow-hover"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Agregar Talla</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="grid grid-cols-12 gap-2 text-[10px] font-black uppercase text-quirona-burgundy/70 px-1">
+                    <span className="col-span-3">Número / Talla</span>
+                    <span className="col-span-5">Largo Plantilla (cm)</span>
+                    <span className="col-span-3">Stock (pares)</span>
+                    <span className="col-span-1 text-center"></span>
+                  </div>
+
+                  {variants.map((v, i) => {
+                    const meas = measurements.find((m) => m.size === v.size) || {
+                      size: v.size,
+                      length: '25.0',
+                    };
+                    return (
+                      <div
+                        key={i}
+                        className="grid grid-cols-12 gap-2 items-center bg-quirona-bg p-2 rounded-xl border border-quirona-burgundy/30"
+                      >
+                        <div className="col-span-3">
+                          <input
+                            type="text"
+                            value={v.size}
+                            onChange={(e) => {
+                              const newSize = e.target.value;
+                              const oldSize = v.size;
+                              const updatedV = [...variants];
+                              updatedV[i].size = newSize;
+                              setVariants(updatedV);
+                              setMeasurements(
+                                measurements.map((m) =>
+                                  m.size === oldSize ? { ...m, size: newSize } : m
+                                )
+                              );
+                            }}
+                            placeholder="38"
+                            className="w-full bg-quirona-cream border border-quirona-burgundy rounded-lg px-2 py-1 text-xs font-black text-quirona-burgundy text-center"
+                          />
+                        </div>
+
+                        <div className="col-span-5 flex items-center gap-1">
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={meas.length}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setMeasurements(
+                                measurements.map((m) =>
+                                  m.size === v.size ? { ...m, length: val } : m
+                                )
+                              );
+                            }}
+                            placeholder="25.0"
+                            className="w-full bg-quirona-cream border border-quirona-burgundy rounded-lg px-2 py-1 text-xs font-bold text-quirona-burgundy"
+                          />
+                          <span className="text-[11px] font-bold text-quirona-burgundy/70">cm</span>
+                        </div>
+
+                        <div className="col-span-3">
+                          <input
+                            type="number"
+                            min="0"
+                            value={v.stock}
+                            onChange={(e) => {
+                              const updated = [...variants];
+                              updated[i].stock = Math.max(0, parseInt(e.target.value) || 0);
+                              setVariants(updated);
+                            }}
+                            className="w-full bg-quirona-cream border border-quirona-burgundy rounded-lg px-2 py-1 text-xs font-extrabold text-quirona-burgundy text-center"
+                          />
+                        </div>
+
+                        <div className="col-span-1 text-center">
+                          {variants.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSize(i)}
+                              className="p-1 rounded text-quirona-burgundy/50 hover:text-red-700 hover:bg-red-50 transition-colors"
+                              title="Eliminar talla"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 mx-auto" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : requiresMeasurements ? (
+              /* Variantes de Ropa: Tallas y Medidas Corporales */
+              <div className="border-t-2 border-quirona-burgundy/20 pt-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="block text-xs font-black text-quirona-burgundy uppercase">
+                      Tallas de Prenda & Medidas (cm):
+                    </label>
+                    <p className="text-[11px] text-quirona-burgundy/70 font-semibold">
+                      Gestiona el stock y tabla de medidas en cm para cada talla.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddSize}
+                    className="retro-btn bg-quirona-yellow text-quirona-burgundy px-3 py-1 rounded-lg text-xs font-black border border-quirona-burgundy flex items-center gap-1 hover:bg-quirona-yellow-hover"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Agregar Talla</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {variants.map((v, i) => {
+                    const meas = measurements.find((m) => m.size === v.size) || {
+                      size: v.size,
+                      chest: '110',
+                      waist: '110',
+                      hip: '110',
+                      length: '70',
+                    };
+                    return (
+                      <div
+                        key={i}
+                        className="bg-quirona-bg p-3 rounded-xl border border-quirona-burgundy/30 space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={v.size}
+                              onChange={(e) => {
+                                const newSize = e.target.value;
+                                const oldSize = v.size;
+                                const updatedV = [...variants];
+                                updatedV[i].size = newSize;
+                                setVariants(updatedV);
+                                setMeasurements(
+                                  measurements.map((m) =>
+                                    m.size === oldSize ? { ...m, size: newSize } : m
+                                  )
+                                );
+                              }}
+                              className="w-16 bg-quirona-cream border border-quirona-burgundy rounded-lg px-2 py-0.5 text-xs font-black text-quirona-burgundy text-center"
+                            />
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] font-bold text-quirona-burgundy/70 uppercase">
+                                Stock:
+                              </span>
+                              <input
+                                type="number"
+                                min="0"
+                                value={v.stock}
+                                onChange={(e) => {
+                                  const updated = [...variants];
+                                  updated[i].stock = Math.max(0, parseInt(e.target.value) || 0);
+                                  setVariants(updated);
+                                }}
+                                className="w-16 bg-quirona-cream border border-quirona-burgundy rounded-lg px-1.5 py-0.5 text-xs font-extrabold text-quirona-burgundy text-center"
+                              />
+                            </div>
+                          </div>
+
+                          {variants.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSize(i)}
+                              className="p-1 rounded text-quirona-burgundy/50 hover:text-red-700 hover:bg-red-50 transition-colors"
+                              title="Eliminar talla"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Medidas de la prenda en cm */}
+                        <div className="grid grid-cols-4 gap-2 pt-1 border-t border-quirona-burgundy/15 text-[11px]">
+                          <div>
+                            <span className="text-[9px] uppercase font-bold text-quirona-burgundy/60 block">
+                              Pecho
+                            </span>
+                            <input
+                              type="text"
+                              value={meas.chest}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setMeasurements(
+                                  measurements.map((m) =>
+                                    m.size === v.size ? { ...m, chest: val } : m
+                                  )
+                                );
+                              }}
+                              className="w-full bg-quirona-cream border border-quirona-burgundy/40 rounded px-1.5 py-0.5 font-bold text-quirona-burgundy"
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[9px] uppercase font-bold text-quirona-burgundy/60 block">
+                              Cintura
+                            </span>
+                            <input
+                              type="text"
+                              value={meas.waist}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setMeasurements(
+                                  measurements.map((m) =>
+                                    m.size === v.size ? { ...m, waist: val } : m
+                                  )
+                                );
+                              }}
+                              className="w-full bg-quirona-cream border border-quirona-burgundy/40 rounded px-1.5 py-0.5 font-bold text-quirona-burgundy"
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[9px] uppercase font-bold text-quirona-burgundy/60 block">
+                              Cadera
+                            </span>
+                            <input
+                              type="text"
+                              value={meas.hip}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setMeasurements(
+                                  measurements.map((m) =>
+                                    m.size === v.size ? { ...m, hip: val } : m
+                                  )
+                                );
+                              }}
+                              className="w-full bg-quirona-cream border border-quirona-burgundy/40 rounded px-1.5 py-0.5 font-bold text-quirona-burgundy"
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[9px] uppercase font-bold text-quirona-burgundy/60 block">
+                              Largo
+                            </span>
+                            <input
+                              type="text"
+                              value={meas.length}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setMeasurements(
+                                  measurements.map((m) =>
+                                    m.size === v.size ? { ...m, length: val } : m
+                                  )
+                                );
+                              }}
+                              className="w-full bg-quirona-cream border border-quirona-burgundy/40 rounded px-1.5 py-0.5 font-bold text-quirona-burgundy"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              /* Sin medidas corporales (Accesorios / Bolsos) */
+              <div className="border-t border-quirona-burgundy/20 pt-3">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-black text-quirona-burgundy uppercase">
+                    Stock Disponible (Talla Única):
+                  </label>
                   <span className="text-[10px] font-bold text-quirona-burgundy/70 bg-quirona-bg px-2 py-0.5 rounded border border-quirona-burgundy/20">
                     Categoría sin medidas corporales
                   </span>
-                )}
-              </div>
+                </div>
 
-              <div className={`grid ${requiresMeasurements ? 'grid-cols-3' : 'grid-cols-1 max-w-xs'} gap-2`}>
-                {variants.map((v, i) => (
-                  <div key={i} className="bg-quirona-bg p-2.5 rounded-xl border border-quirona-burgundy/40">
-                    <div className="text-xs font-black text-quirona-burgundy">
-                      {requiresMeasurements ? `Talla ${v.size}` : 'Unidades en Inventario'}
+                <div className="max-w-xs">
+                  {variants.map((v, i) => (
+                    <div key={i} className="bg-quirona-bg p-2.5 rounded-xl border border-quirona-burgundy/40">
+                      <div className="text-xs font-black text-quirona-burgundy">
+                        Unidades en Inventario
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        value={v.stock}
+                        onChange={(e) => {
+                          const updated = [...variants];
+                          updated[i].stock = Math.max(0, parseInt(e.target.value) || 0);
+                          setVariants(updated);
+                        }}
+                        className="w-full mt-1 bg-quirona-cream border border-quirona-burgundy rounded-lg px-2 py-1 text-xs font-extrabold text-quirona-burgundy"
+                      />
                     </div>
-                    <input
-                      type="number"
-                      min="0"
-                      value={v.stock}
-                      onChange={(e) => {
-                        const updated = [...variants];
-                        updated[i].stock = Math.max(0, parseInt(e.target.value) || 0);
-                        setVariants(updated);
-                      }}
-                      className="w-full mt-1 bg-quirona-cream border border-quirona-burgundy rounded-lg px-2 py-1 text-xs font-extrabold text-quirona-burgundy"
-                    />
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Barra de Acciones Fija Inferior */}

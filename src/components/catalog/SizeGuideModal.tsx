@@ -48,36 +48,69 @@ export default function SizeGuideModal({
           Todas las medidas están expresadas en centímetros. Te sugerimos medir una prenda similar que te quede bien colocada plana sobre una mesa.
         </p>
 
-        {measurements && measurements.length > 0 ? (
-          <div className="overflow-x-auto border-2 border-quirona-burgundy rounded-xl bg-quirona-bg/50">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-quirona-burgundy text-quirona-cream uppercase font-bold text-[11px]">
-                <tr>
-                  <th className="py-2.5 px-3">Talla</th>
-                  <th className="py-2.5 px-3">Pecho / Busto</th>
-                  <th className="py-2.5 px-3">Cintura</th>
-                  <th className="py-2.5 px-3">Cadera</th>
-                  <th className="py-2.5 px-3">Largo</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-quirona-burgundy/20 font-medium">
-                {measurements.map((m) => (
-                  <tr key={m.size} className="hover:bg-quirona-yellow/20 transition-colors">
-                    <td className="py-2.5 px-3 font-extrabold text-quirona-burgundy">{m.size}</td>
-                    <td className="py-2.5 px-3">{m.chest !== '-' ? `${m.chest} cm` : '-'}</td>
-                    <td className="py-2.5 px-3">{m.waist !== '-' ? `${m.waist} cm` : '-'}</td>
-                    <td className="py-2.5 px-3">{m.hip !== '-' ? `${m.hip} cm` : '-'}</td>
-                    <td className="py-2.5 px-3 font-semibold text-quirona-burgundy">{m.length} cm</td>
+        {(() => {
+          const isFootwear = measurements && measurements.length > 0 && measurements.every(
+            (m) => (!m.chest || m.chest === '-') && (!m.waist || m.waist === '-') && (!m.hip || m.hip === '-')
+          );
+
+          if (!measurements || measurements.length === 0) {
+            return (
+              <div className="p-6 text-center text-sm font-medium bg-quirona-bg/30 rounded-xl border border-quirona-burgundy/30">
+                Este producto cuenta con medidas estándar. Si tienes dudas con tu talla ideal, escríbenos directamente a WhatsApp y te asesoramos al instante.
+              </div>
+            );
+          }
+
+          if (isFootwear) {
+            return (
+              <div className="overflow-x-auto border-2 border-quirona-burgundy rounded-xl bg-quirona-bg/50">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-quirona-burgundy text-quirona-cream uppercase font-bold text-[11px]">
+                    <tr>
+                      <th className="py-2.5 px-4">Talla / Número</th>
+                      <th className="py-2.5 px-4">Largo de Pie / Plantilla</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-quirona-burgundy/20 font-medium">
+                    {measurements.map((m) => (
+                      <tr key={m.size} className="hover:bg-quirona-yellow/20 transition-colors">
+                        <td className="py-2.5 px-4 font-black text-quirona-burgundy">Talla {m.size}</td>
+                        <td className="py-2.5 px-4 font-bold text-quirona-burgundy">{m.length} cm</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          }
+
+          return (
+            <div className="overflow-x-auto border-2 border-quirona-burgundy rounded-xl bg-quirona-bg/50">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-quirona-burgundy text-quirona-cream uppercase font-bold text-[11px]">
+                  <tr>
+                    <th className="py-2.5 px-3">Talla</th>
+                    <th className="py-2.5 px-3">Pecho / Busto</th>
+                    <th className="py-2.5 px-3">Cintura</th>
+                    <th className="py-2.5 px-3">Cadera</th>
+                    <th className="py-2.5 px-3">Largo</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="p-6 text-center text-sm font-medium bg-quirona-bg/30 rounded-xl border border-quirona-burgundy/30">
-            Esta prenda cuenta con corte estándar / oversize. Si tienes dudas con tu talla ideal, escríbenos directamente a WhatsApp y te asesoramos al instante.
-          </div>
-        )}
+                </thead>
+                <tbody className="divide-y divide-quirona-burgundy/20 font-medium">
+                  {measurements.map((m) => (
+                    <tr key={m.size} className="hover:bg-quirona-yellow/20 transition-colors">
+                      <td className="py-2.5 px-3 font-extrabold text-quirona-burgundy">{m.size}</td>
+                      <td className="py-2.5 px-3">{m.chest && m.chest !== '-' ? `${m.chest} cm` : '-'}</td>
+                      <td className="py-2.5 px-3">{m.waist && m.waist !== '-' ? `${m.waist} cm` : '-'}</td>
+                      <td className="py-2.5 px-3">{m.hip && m.hip !== '-' ? `${m.hip} cm` : '-'}</td>
+                      <td className="py-2.5 px-3 font-semibold text-quirona-burgundy">{m.length} cm</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        })()}
 
         <div className="mt-5 pt-4 border-t border-quirona-burgundy/20 flex items-center justify-between">
           <span className="text-xs text-quirona-burgundy/70">¿Dudas entre 2 tallas? Elige la más grande para fit holgado.</span>

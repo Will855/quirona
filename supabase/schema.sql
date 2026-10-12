@@ -177,7 +177,7 @@ insert into categories (id, name, slug, description, has_measurements) values
 ('ropa', 'Ropa', 'ropa', 'Sudaderas, franelas oversize y prendas con corte cómodo y retro.', true),
 ('accesorios', 'Accesorios', 'accesorios', 'Gorras, pines, stickers y complementos vintage.', false),
 ('bolsos', 'Bolsos & Totes', 'bolsos', 'Tote bags de lona y bolsos con diseños exclusivos Quirona.', false),
-('calzado', 'Calzado', 'calzado', 'Sneakers y calzado urbano con estética pop.', false)
+('calzado', 'Calzado', 'calzado', 'Sneakers y calzado urbano con estética pop.', true)
 on conflict (id) do nothing;
 
 insert into site_config (id, config) values

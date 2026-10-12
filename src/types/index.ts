@@ -9,7 +9,7 @@ export interface Category {
   icon?: string;
 }
 
-export type ClothingSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'Única';
+export type ClothingSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'Única' | string;
 
 export interface ProductVariant {
   id: string;
@@ -22,10 +22,10 @@ export interface ProductVariant {
 
 export interface SizeMeasurement {
   size: ClothingSize;
-  chest: string;    // Pecho / Busto en cm
-  waist: string;    // Cintura en cm
-  hip: string;      // Cadera en cm
-  length: string;   // Largo de la prenda en cm
+  chest?: string;    // Pecho / Busto en cm
+  waist?: string;    // Cintura en cm
+  hip?: string;      // Cadera en cm
+  length: string;   // Largo de prenda o plantilla en cm
 }
 
 export interface Product {

@@ -30,7 +30,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
     name: 'Calzado',
     slug: 'calzado',
     description: 'Sneakers y calzado urbano con estética pop.',
-    hasMeasurements: false,
+    hasMeasurements: true,
   },
 ];
 
