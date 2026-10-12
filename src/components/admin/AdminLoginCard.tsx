@@ -34,9 +34,9 @@ export default function AdminLoginCard({ onLoginSuccess }: AdminLoginCardProps) 
   const [setupConfirmPassword, setSetupConfirmPassword] = useState('');
   const [showSetupPassword, setShowSetupPassword] = useState(false);
 
-  // Credenciales básicas de Login
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
+  // Credenciales básicas de Login (predefinidas en demo)
+  const [loginEmail, setLoginEmail] = useState('admin@quirona.com');
+  const [loginPassword, setLoginPassword] = useState('quirona2026');
   const [showPassword, setShowPassword] = useState(false);
 
   // Datos 2FA TOTP
@@ -54,17 +54,17 @@ export default function AdminLoginCard({ onLoginSuccess }: AdminLoginCardProps) 
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Detectar automáticamente si no hay administrador registrado
+  // En versión demo, si ya tiene sesión iniciada, notificar directamente
   useEffect(() => {
     fetch('/api/admin/check')
       .then((res) => res.json())
       .then((data) => {
-        if (data && data.hasAdmin === false) {
-          setStep('setup');
+        if (data && data.authenticated) {
+          onLoginSuccess(data.email || 'admin@quirona.com');
         }
       })
       .catch(() => {});
-  }, []);
+  }, [onLoginSuccess]);
 
   // Copiar secreto manual Base32
   const handleCopySecret = () => {
@@ -130,16 +130,8 @@ export default function AdminLoginCard({ onLoginSuccess }: AdminLoginCardProps) 
       });
       const data = await res.json();
 
-      if (data.requireMfaSetup) {
-        // Primera vez: requiere configurar Google Authenticator
-        setMfaQrCode(data.qrCode || '');
-        setMfaSecret(data.secret || '');
-        setStep('mfa_setup');
-      } else if (data.requireMfaVerify) {
-        // Ya configurado: requiere código de 6 dígitos
-        setStep('mfa_verify');
-      } else if (data.success && data.user) {
-        // Acceso directo (si ya validado)
+      if (data.success && data.user) {
+        // Acceso directo con éxito
         onLoginSuccess(data.user.email || loginEmail);
       } else {
         setErrorMessage(data.error || 'Credenciales incorrectas');
@@ -399,6 +391,19 @@ export default function AdminLoginCard({ onLoginSuccess }: AdminLoginCardProps) 
               <p className="text-xs text-quirona-burgundy/75 font-medium">
                 Acceso restringido para el equipo de Quirona Store. Ingresa con tu correo y clave autorizada.
               </p>
+            </div>
+
+            {/* Banner de Modo Demostración con credenciales predefinidas */}
+            <div className="p-3 bg-quirona-yellow/20 border-2 border-quirona-burgundy/30 rounded-2xl text-center space-y-1.5">
+              <span className="text-[10px] font-black uppercase text-quirona-burgundy bg-quirona-yellow px-2 py-0.5 rounded-full border border-quirona-burgundy inline-block">
+                Modo Demostración
+              </span>
+              <p className="text-xs font-bold text-quirona-burgundy">
+                Credenciales predefinidas de prueba:
+              </p>
+              <div className="text-xs font-mono font-black text-quirona-burgundy bg-white/80 py-1 px-3 rounded-lg border border-quirona-burgundy/20 inline-block">
+                admin@quirona.com &bull; quirona2026
+              </div>
             </div>
 
             {errorMessage && (

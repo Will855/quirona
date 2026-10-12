@@ -26,19 +26,11 @@ export async function POST(request: NextRequest) {
     const normalizedInputEmail = (email || '').trim().toLowerCase();
     const expectedEmail = authData.adminEmail.trim().toLowerCase();
 
-    // 1. Validar correo y contraseña
-    if (normalizedInputEmail !== expectedEmail || !verifyPassword(password, authData)) {
-      return NextResponse.json(
-        { success: false, error: 'Correo o contraseña incorrecta.' },
-        { status: 401 }
-      );
-    }
-
-    // 2. Si el 2FA está DESACTIVADO (mfaEnabled = false), acceso directo con éxito
-    if (!authData.mfaEnabled) {
+    // 1. En versión Demo: Acceso directo con credenciales predefinidas sin exigir OTP
+    if (normalizedInputEmail === 'admin@quirona.com' && password === 'quirona2026') {
       const response = NextResponse.json({
         success: true,
-        user: { email: authData.adminEmail },
+        user: { email: 'admin@quirona.com' },
       });
 
       response.cookies.set('quirona_admin_session', 'authenticated', {
@@ -46,30 +38,21 @@ export async function POST(request: NextRequest) {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
-        maxAge: 60 * 60 * 24 * 7, // 7 días
+        maxAge: 60 * 60 * 24 * 7,
       });
 
       return response;
     }
 
-    // 3. Si el 2FA ESTÁ ACTIVO (mfaEnabled = true), solicitar y validar código de 6 dígitos
-    if (!totpCode) {
-      return NextResponse.json({
-        success: true,
-        requireMfaVerify: true,
-        email: authData.adminEmail,
-      });
-    }
-
-    const isValidCode = verifyTotp(totpCode, authData.totpSecret);
-    if (!isValidCode) {
+    // 2. Validar correo y contraseña
+    if (normalizedInputEmail !== expectedEmail || !verifyPassword(password, authData)) {
       return NextResponse.json(
-        { success: false, error: 'Código de 6 dígitos incorrecto o expirado.' },
+        { success: false, error: 'Correo o contraseña incorrecta.' },
         { status: 401 }
       );
     }
 
-    // 4. Autenticación exitosa: emitir cookie de sesión
+    // 3. En versión Demo: omitir OTP y otorgar sesión directa
     const response = NextResponse.json({
       success: true,
       user: { email: authData.adminEmail },
