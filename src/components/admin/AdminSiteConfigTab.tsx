@@ -36,8 +36,8 @@ export default function AdminSiteConfigTab() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!config) return;
 
     try {
@@ -72,7 +72,7 @@ export default function AdminSiteConfigTab() {
   }
 
   return (
-    <form onSubmit={handleSave} className="space-y-6 text-left">
+    <div className="space-y-6 text-left">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black text-quirona-burgundy">
@@ -178,7 +178,8 @@ export default function AdminSiteConfigTab() {
       {activeSubTab !== 'notifications' && activeSubTab !== 'security' && (
         <div className="pt-2 flex justify-end">
           <button
-            type="submit"
+            type="button"
+            onClick={() => handleSave()}
             disabled={saving}
             className="retro-btn bg-quirona-yellow text-quirona-burgundy px-7 py-3 rounded-full font-black text-sm border-2 border-quirona-burgundy retro-shadow flex items-center gap-2"
           >
@@ -187,6 +188,6 @@ export default function AdminSiteConfigTab() {
           </button>
         </div>
       )}
-    </form>
+    </div>
   );
 }

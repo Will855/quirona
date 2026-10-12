@@ -237,8 +237,8 @@ export default function ConfigSecuritySubTab() {
   };
 
   // Confirmar y activar 2FA con los 6 dígitos
-  const handleConfirmMfaSetup = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleConfirmMfaSetup = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!mfaVerifyCode.trim() || mfaVerifyCode.trim().length !== 6) {
       alert('Ingresa el código numérico de 6 dígitos que muestra tu app.');
       return;
@@ -570,7 +570,7 @@ export default function ConfigSecuritySubTab() {
                     </div>
                   </div>
 
-                  <form onSubmit={handleConfirmMfaSetup} className="space-y-2 pt-1">
+                  <div className="space-y-2 pt-1">
                     <label className="block text-[10px] font-black text-quirona-burgundy uppercase">
                       Código de 6 dígitos generado por la app:
                     </label>
@@ -582,17 +582,24 @@ export default function ConfigSecuritySubTab() {
                         placeholder="000000"
                         value={mfaVerifyCode}
                         onChange={(e) => setMfaVerifyCode(e.target.value.replace(/\D/g, ''))}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleConfirmMfaSetup();
+                          }
+                        }}
                         className="flex-1 bg-white border-2 border-quirona-burgundy rounded-xl px-3 py-1.5 text-center text-sm font-black tracking-widest text-quirona-burgundy focus:outline-none"
                       />
                       <button
-                        type="submit"
+                        type="button"
+                        onClick={() => handleConfirmMfaSetup()}
                         disabled={savingCreds || mfaVerifyCode.length !== 6}
                         className="retro-btn bg-quirona-yellow text-quirona-burgundy px-3.5 py-1.5 rounded-xl font-black text-xs border-2 border-quirona-burgundy hover:bg-quirona-yellow-hover disabled:opacity-50"
                       >
                         {savingCreds ? 'Validando...' : 'Activar 2FA'}
                       </button>
                     </div>
-                  </form>
+                  </div>
                 </div>
               ) : (
                 <>
