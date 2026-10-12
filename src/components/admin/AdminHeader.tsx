@@ -71,60 +71,86 @@ export default function AdminHeader({
     }
   };
 
-  const handleEditRateManual = () => {
+  // SEC-12: En handleEditRateManual, evitar cambiar el estado visual local si la petición falla
+  const handleEditRateManual = async () => {
     const input = prompt(
       'Sobreescribir tasa manualmente (VES por 1 USD):',
       exchangeRate.toString()
     );
-    if (input && !isNaN(Number(input))) {
-      const num = Number(input);
-      fetch('/api/exchange-rate', {
+    if (!input || input.trim() === '') return;
+
+    const num = parseFloat(input.trim());
+    if (isNaN(num) || num <= 0) {
+      alert('Tasa inválida. Debe ser un número mayor a 0.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/exchange-rate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rate: num }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            onUpdateExchangeRate(num);
-            setRateStatus('MANUAL');
-            setStatusDesc('Tasa fijada manualmente por el administrador.');
-          }
-        })
-        .catch(() => {
-          onUpdateExchangeRate(num);
-        });
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.success) {
+        const confirmedRate = typeof data.rate === 'number' ? data.rate : num;
+        onUpdateExchangeRate(confirmedRate);
+        setRateStatus(data.status || 'MANUAL');
+        setStatusDesc(data.statusDescription || 'Tasa fijada manualmente por el administrador.');
+        setToastMessage(`Tasa manual actualizada: 1 USD = ${formatVES(confirmedRate)}`);
+        setTimeout(() => setToastMessage(null), 4000);
+      } else {
+        alert(data.error || 'No se pudo actualizar la tasa manualmente.');
+      }
+    } catch {
+      alert('Error de conexión al actualizar la tasa manual.');
     }
   };
 
-  // Badge visual de estado BCV
+  // SEC-11: Badge visual de estado BCV con evaluación estricta y fallback seguro a MANUAL
   const renderRateBadge = () => {
-    if (rateStatus === 'VIGENTE') {
-      return (
-        <span className="inline-flex items-center gap-1 text-[10px] font-black text-green-800 bg-green-100 border border-green-300 px-2 py-0.5 rounded-full" title={statusDesc}>
-          <CheckCircle2 className="w-3 h-3 text-green-600" /> Vigente BCV
-        </span>
-      );
+    switch (rateStatus) {
+      case 'VIGENTE':
+        return (
+          <span
+            className="inline-flex items-center gap-1 text-[10px] font-black text-green-800 bg-green-100 border border-green-300 px-2 py-0.5 rounded-full"
+            title={statusDesc}
+          >
+            <CheckCircle2 className="w-3 h-3 text-green-600" /> Vigente BCV
+          </span>
+        );
+      case 'PENDIENTE':
+      case 'PENDIENTE_DESPUES_DE_1PM':
+        return (
+          <span
+            className="inline-flex items-center gap-1 text-[10px] font-black text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full"
+            title={statusDesc}
+          >
+            <Clock className="w-3 h-3 text-amber-600" /> Pendiente &gt;1:00 PM
+          </span>
+        );
+      case 'FIN_DE_SEMANA':
+        return (
+          <span
+            className="inline-flex items-center gap-1 text-[10px] font-black text-blue-800 bg-blue-100 border border-blue-300 px-2 py-0.5 rounded-full"
+            title={statusDesc}
+          >
+            <Clock className="w-3 h-3 text-blue-600" /> Fin de Semana
+          </span>
+        );
+      case 'MANUAL':
+      default:
+        return (
+          <span
+            className="inline-flex items-center gap-1 text-[10px] font-black text-purple-800 bg-purple-100 border border-purple-300 px-2 py-0.5 rounded-full"
+            title={statusDesc || 'Tasa fijada manualmente'}
+          >
+            <AlertCircle className="w-3 h-3 text-purple-600" /> Manual
+          </span>
+        );
     }
-    if (rateStatus === 'PENDIENTE_DESPUES_DE_1PM') {
-      return (
-        <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full" title={statusDesc}>
-          <Clock className="w-3 h-3 text-amber-600" /> Pendiente &gt;1:00 PM
-        </span>
-      );
-    }
-    if (rateStatus === 'FIN_DE_SEMANA') {
-      return (
-        <span className="inline-flex items-center gap-1 text-[10px] font-black text-blue-800 bg-blue-100 border border-blue-300 px-2 py-0.5 rounded-full" title={statusDesc}>
-          <Clock className="w-3 h-3 text-blue-600" /> Fin de Semana
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-black text-purple-800 bg-purple-100 border border-purple-300 px-2 py-0.5 rounded-full" title={statusDesc}>
-        <AlertCircle className="w-3 h-3 text-purple-600" /> Manual
-      </span>
-    );
   };
 
   return (
