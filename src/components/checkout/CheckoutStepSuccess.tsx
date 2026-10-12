@@ -36,11 +36,12 @@ export default function CheckoutStepSuccess({
 
   // Construir mensaje codificado para WhatsApp
   const generateWhatsAppMessage = () => {
-    const itemsList = createdOrder.items
+    // SEC-38: Formato de cantidades en la plantilla de mensaje pre-armado para WhatsApp
+    const itemsList = (createdOrder.items || [])
       .map(
         (item) =>
-          `• 1x ${item.productName} (Talla: ${item.size}, Color: ${item.colorName}) - ${formatUSD(
-            item.unitPriceUSD * item.quantity
+          `• ${item.quantity || 1}x ${item.productName} (Talla: ${item.size}, Color: ${item.colorName}) - ${formatUSD(
+            item.unitPriceUSD * (item.quantity || 1)
           )}`
       )
       .join('\n');
@@ -54,23 +55,41 @@ export default function CheckoutStepSuccess({
         ? 'Zelle'
         : 'Efectivo';
 
-    const deliveryLabel =
-      createdOrder.deliveryMethod === 'retiro'
-        ? 'Retiro Personal (Gratis)'
-        : createdOrder.deliveryMethod === 'delivery'
-        ? `Delivery en ${createdOrder.customer.city} (${createdOrder.customer.address})`
-        : `Envío Nacional a ${createdOrder.customer.city} (MRW/Zoom/Tealca)`;
+    // SEC-39: Mapeo seguro de etiquetas de entrega (retiro, delivery, nacional)
+    const getDeliveryLabel = () => {
+      const city = createdOrder.customer?.city || '';
+      const address = createdOrder.customer?.address ? ` (${createdOrder.customer.address})` : '';
 
-    const text = `¡Hola Quirona Store! 👋 Acabo de generar mi pedido *${createdOrder.orderCode}*:
+      switch (createdOrder.deliveryMethod) {
+        case 'retiro':
+          return 'Retiro Personal (Gratis)';
+        case 'delivery':
+          return city ? `Delivery en ${city}${address}` : `Delivery Local${address}`;
+        case 'nacional':
+          return city
+            ? `Envío Nacional a ${city} (MRW/Zoom/Tealca)`
+            : 'Envío Nacional (MRW/Zoom/Tealca)';
+        default:
+          return 'Por coordinar';
+      }
+    };
+
+    const deliveryLabel = getDeliveryLabel();
+
+    const customerName = createdOrder.customer?.fullName || 'Cliente';
+    const customerPhone = createdOrder.customer?.whatsapp || '';
+    const customerId = createdOrder.customer?.idDocument || 'N/A';
+
+    const text = `¡Hola Quirona Store! 👋 Acabo de generar mi pedido *${createdOrder.orderCode || ''}*:
 
 🛍️ *Prendas Seleccionadas:*
 ${itemsList}
 
-💵 *Total a pagar:* ${formatUSD(createdOrder.subtotalUSD)} (~${formatVES(createdOrder.subtotalVES)})
+💵 *Total a pagar:* ${formatUSD(createdOrder.subtotalUSD || 0)} (~${formatVES(createdOrder.subtotalVES || 0)})
 💳 *Método:* ${paymentLabel}
 🚚 *Entrega:* ${deliveryLabel}
-👤 *Cliente:* ${createdOrder.customer.fullName} (${createdOrder.customer.whatsapp})
-🆔 *Cédula/DNI:* ${createdOrder.customer.idDocument}
+👤 *Cliente:* ${customerName}${customerPhone ? ` (${customerPhone})` : ''}
+🆔 *Cédula/DNI:* ${customerId}
 
 ${referenceNumber ? `🔖 *Nro. de Referencia:* ${referenceNumber}\n` : ''}Adjunto mi comprobante de pago: 📎`;
 
