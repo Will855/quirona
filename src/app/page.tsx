@@ -20,7 +20,7 @@ export default function HomePage() {
     fetch('/api/products')
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && data.products) {
+        if (data.success && Array.isArray(data.products)) {
           setProducts(data.products);
         }
       })
@@ -47,8 +47,9 @@ export default function HomePage() {
       .catch((err) => console.error('Error fetching site config:', err));
   }, []);
 
-  const featuredProducts = products.filter((p) => p.featured || p.isNew);
-  const bestSellers = products.filter((p) => p.isBestSeller);
+  const safeProducts = Array.isArray(products) ? products : [];
+  const featuredProducts = safeProducts.filter((p) => p && (p.featured || p.isNew));
+  const bestSellers = safeProducts.filter((p) => p && p.isBestSeller);
 
   const sizeBanner = siteConfig?.sizeBanner || {
     tag: 'Hecho para destacar',

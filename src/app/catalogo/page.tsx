@@ -53,7 +53,7 @@ function CatalogContent() {
 
       // Filtro por talla
       if (selectedSize !== 'all') {
-        const hasSizeWithStock = product.variants.some(
+        const hasSizeWithStock = (product.variants || []).some(
           (v) => v.size === selectedSize && v.stock > 0
         );
         if (!hasSizeWithStock) return false;

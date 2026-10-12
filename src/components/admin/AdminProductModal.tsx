@@ -26,6 +26,7 @@ export default function AdminProductModal({
   const [originalPriceUSD, setOriginalPriceUSD] = useState('');
   const [description, setDescription] = useState('');
   const [material, setMaterial] = useState('');
+  const [careInstructions, setCareInstructions] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -125,7 +126,8 @@ export default function AdminProductModal({
         basePriceUSD: parseFloat(basePriceUSD),
         originalPriceUSD: originalPriceUSD ? parseFloat(originalPriceUSD) : undefined,
         description,
-        material,
+        material: material.trim() || '100% Algodón',
+        careInstructions: careInstructions.trim() || 'Lavar con agua fría.',
         images: [imageUrl.trim()],
         variants: finalVariants,
         measurements: requiresMeasurements ? measurements : undefined,
@@ -146,6 +148,7 @@ export default function AdminProductModal({
         setOriginalPriceUSD('');
         setDescription('');
         setMaterial('');
+        setCareInstructions('');
         setImageUrl('');
         onProductCreated();
         onClose();
@@ -249,6 +252,34 @@ export default function AdminProductModal({
               onChange={(e) => setDescription(e.target.value)}
               className="w-full bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-medium text-quirona-burgundy focus:outline-none"
             />
+          </div>
+
+          {/* Composición y Cuidados */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-quirona-burgundy uppercase mb-1">
+                Composición / Material
+              </label>
+              <input
+                type="text"
+                placeholder="Ej. 100% Algodón pesado (French Terry)"
+                value={material}
+                onChange={(e) => setMaterial(e.target.value)}
+                className="w-full bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-medium text-quirona-burgundy focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-quirona-burgundy uppercase mb-1">
+                Cuidados de la Prenda
+              </label>
+              <input
+                type="text"
+                placeholder="Ej. Lavar con agua fría, no planchar estampado"
+                value={careInstructions}
+                onChange={(e) => setCareInstructions(e.target.value)}
+                className="w-full bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-medium text-quirona-burgundy focus:outline-none"
+              />
+            </div>
           </div>
 
           {/* Subida de Imagen */}

@@ -17,8 +17,9 @@ export default function ProductCard({ product, onSelect }: ProductCardProps) {
   const priceVES = Math.round(product.basePriceUSD * exchangeRate * 100) / 100;
 
   // Variantes con stock disponible
-  const availableVariants = product.variants.filter((v) => v.stock > 0);
-  const isCompletelyOutOfStock = availableVariants.length === 0;
+  const variantsList = Array.isArray(product.variants) ? product.variants : [];
+  const availableVariants = variantsList.filter((v) => v.stock > 0);
+  const isCompletelyOutOfStock = variantsList.length > 0 && availableVariants.length === 0;
 
   // Extraer tallas únicas disponibles
   const availableSizes = Array.from(new Set(availableVariants.map((v) => v.size)));
