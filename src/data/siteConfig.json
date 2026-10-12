@@ -10,14 +10,14 @@
     },
     "transferencia": {
       "bank": "Banesco Banco Universal",
-      "accountNumber": "0134-0000-00-0000000000",
-      "accountType": "Corriente",
       "idDocument": "J-50123456-7",
-      "beneficiary": "Quirona Store C.A."
+      "accountType": "Corriente",
+      "beneficiary": "Quirona Store C.A.",
+      "accountNumber": "0134-0000-00-0000000000"
     },
     "zelle": {
-      "email": "pagos@quironastore.com",
-      "holder": "Quirona LLC"
+      "email": "",
+      "holder": ""
     },
     "efectivoNotes": "Pago en divisas o bolívares en efectivo al momento del retiro o entrega."
   },
@@ -45,10 +45,5 @@
     "description": "En Quirona medimos cada prenda a mano para darte la medida exacta en centímetros. Puedes consultarnos antes de ordenar y te aseguramos el fit que buscas.",
     "buttonText": "Consultar por WhatsApp"
   },
-  "footerBio": "Boutique de ropa y accesorios con vibra vintage-pop. Prendas diseñadas con personalidad, comodidad y estilo atemporal.",
-  "activeExchangeRate": {
-    "rate": 875.65,
-    "source": "dolarapi_oficial",
-    "updatedAt": "2026-10-09T00:00:00-04:00"
-  }
+  "footerBio": "Boutique de ropa y accesorios con vibra vintage-pop. Prendas diseñadas con personalidad, comodidad y estilo atemporal."
 }

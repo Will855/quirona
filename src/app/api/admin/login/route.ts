@@ -34,27 +34,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Si es la PRIMERA VEZ y el 2FA aún no está configurado (mfaEnabled = false)
-    if (!authData.mfaEnabled || !authData.totpSecret) {
-      // Generar nuevo secreto Base32 y código QR para Google Authenticator
-      const newSecret = generateBase32Secret();
-      const otpauthUri = buildOtpauthUri(authData.adminEmail, newSecret, 'Quirona Store');
-      const qrDataUrl = await generateQrCodeDataUrl(otpauthUri);
-
-      // Guardar el secreto pendiente de confirmación
-      authData.totpSecret = newSecret;
-      await saveAdminAuthData(authData);
-
-      return NextResponse.json({
+    // 2. Si el 2FA está DESACTIVADO (mfaEnabled = false), acceso directo con éxito
+    if (!authData.mfaEnabled) {
+      const response = NextResponse.json({
         success: true,
-        requireMfaSetup: true,
-        qrCode: qrDataUrl,
-        secret: newSecret,
-        email: authData.adminEmail,
+        user: { email: authData.adminEmail },
       });
+
+      response.cookies.set('quirona_admin_session', 'authenticated', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7, // 7 días
+      });
+
+      return response;
     }
 
-    // 3. Si el 2FA YA ESTÁ ACTIVO, validar el código de 6 dígitos
+    // 3. Si el 2FA ESTÁ ACTIVO (mfaEnabled = true), solicitar y validar código de 6 dígitos
     if (!totpCode) {
       return NextResponse.json({
         success: true,

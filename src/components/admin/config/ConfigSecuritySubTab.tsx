@@ -11,6 +11,10 @@ import {
   Lock,
   Smartphone,
   ShieldAlert,
+  Copy,
+  Check,
+  X,
+  QrCode,
 } from 'lucide-react';
 import { formatVES } from '@/lib/currency';
 
@@ -40,6 +44,13 @@ export default function ConfigSecuritySubTab() {
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [credFeedback, setCredFeedback] = useState<{ success: boolean; msg: string } | null>(null);
+
+  // Estados de Vinculación de 2FA en vivo
+  const [linkingMfa, setLinkingMfa] = useState(false);
+  const [loadingQr, setLoadingQr] = useState(false);
+  const [mfaSetupData, setMfaSetupData] = useState<{ qrCode: string; secret: string } | null>(null);
+  const [mfaVerifyCode, setMfaVerifyCode] = useState('');
+  const [copiedMfaSecret, setCopiedMfaSecret] = useState(false);
 
   const fetchRateInfo = async () => {
     try {
@@ -163,8 +174,9 @@ export default function ConfigSecuritySubTab() {
     }
   };
 
+  // Desvincular y desactivar 2FA
   const handleReset2FA = async () => {
-    if (!confirm('¿Seguro que deseas desvincular Google Authenticator? Al próximo inicio de sesión se te solicitará escanear un nuevo código QR.')) {
+    if (!confirm('¿Seguro que deseas desvincular y desactivar Google Authenticator? Podrás iniciar sesión directamente solo con tu correo y contraseña.')) {
       return;
     }
 
@@ -178,13 +190,80 @@ export default function ConfigSecuritySubTab() {
       });
       const data = await res.json();
       if (data.success) {
-        setCredFeedback({ success: true, msg: 'Google Authenticator desvinculado. El próximo inicio de sesión requerirá escanear un código nuevo.' });
+        setCredFeedback({
+          success: true,
+          msg: 'Google Authenticator desvinculado con éxito. Ahora puedes acceder directamente solo con correo y contraseña.',
+        });
+        setLinkingMfa(false);
+        setMfaSetupData(null);
         fetchCredentials();
       } else {
         setCredFeedback({ success: false, msg: data.error || 'Error al desvincular 2FA.' });
       }
     } catch {
       setCredFeedback({ success: false, msg: 'Error de conexión al desvincular 2FA.' });
+    } finally {
+      setSavingCreds(false);
+    }
+  };
+
+  // Iniciar vinculación de 2FA en vivo (generar QR)
+  const handleStartLinkingMfa = async () => {
+    try {
+      setLoadingQr(true);
+      setCredFeedback(null);
+      const res = await fetch('/api/admin/mfa/generate', { method: 'POST' });
+      const data = await res.json();
+      if (data.success && data.qrCode) {
+        setMfaSetupData({ qrCode: data.qrCode, secret: data.secret });
+        setLinkingMfa(true);
+      } else {
+        setCredFeedback({ success: false, msg: data.error || 'Error al generar código QR.' });
+      }
+    } catch {
+      setCredFeedback({ success: false, msg: 'Error de conexión al generar código QR.' });
+    } finally {
+      setLoadingQr(false);
+    }
+  };
+
+  // Copiar secreto manual Base32
+  const handleCopyMfaSecret = () => {
+    if (mfaSetupData?.secret && typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(mfaSetupData.secret).catch(() => {});
+      setCopiedMfaSecret(true);
+      setTimeout(() => setCopiedMfaSecret(false), 2000);
+    }
+  };
+
+  // Confirmar y activar 2FA con los 6 dígitos
+  const handleConfirmMfaSetup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mfaVerifyCode.trim() || mfaVerifyCode.trim().length !== 6) {
+      alert('Ingresa el código numérico de 6 dígitos que muestra tu app.');
+      return;
+    }
+
+    try {
+      setSavingCreds(true);
+      setCredFeedback(null);
+      const res = await fetch('/api/admin/mfa/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ totpCode: mfaVerifyCode.trim() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCredFeedback({ success: true, msg: '¡Google Authenticator vinculado y activado exitosamente!' });
+        setLinkingMfa(false);
+        setMfaSetupData(null);
+        setMfaVerifyCode('');
+        fetchCredentials();
+      } else {
+        setCredFeedback({ success: false, msg: data.error || 'Código incorrecto. Verifica la hora de tu teléfono.' });
+      }
+    } catch {
+      setCredFeedback({ success: false, msg: 'Error de conexión al activar 2FA.' });
     } finally {
       setSavingCreds(false);
     }
@@ -324,9 +403,9 @@ export default function ConfigSecuritySubTab() {
               <span>2FA Activo</span>
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-400">
-              <Clock className="w-3.5 h-3.5 text-amber-700" />
-              <span>2FA Pendiente de Vinculación</span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gray-100 text-gray-700 border border-gray-300">
+              <Clock className="w-3.5 h-3.5 text-gray-500" />
+              <span>2FA Desactivado (Solo Contraseña)</span>
             </span>
           )}
         </div>
@@ -406,24 +485,134 @@ export default function ConfigSecuritySubTab() {
           {/* Gestión de 2FA y Rescate Técnico */}
           <div className="bg-white/80 p-4 rounded-xl border border-quirona-burgundy/20 space-y-4 flex flex-col justify-between">
             <div className="space-y-3">
-              <div className="text-xs font-black text-quirona-burgundy uppercase flex items-center gap-1.5">
-                <Smartphone className="w-4 h-4 text-quirona-burgundy" />
-                <span>Gestión de Google Authenticator</span>
+              <div className="text-xs font-black text-quirona-burgundy uppercase flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Smartphone className="w-4 h-4 text-quirona-burgundy" />
+                  <span>Google Authenticator (2FA)</span>
+                </div>
+                {credData?.mfaEnabled ? (
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-green-100 text-green-900 border border-green-400">
+                    Activo
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 border border-gray-300">
+                    Desactivado
+                  </span>
+                )}
               </div>
 
-              <p className="text-[11px] text-quirona-burgundy/80 leading-relaxed">
-                Si cambiaste de teléfono celular o deseas vincular una nueva aplicación de autenticación, puedes desvincular el dispositivo actual. Al iniciar sesión nuevamente, el sistema te mostrará un nuevo código QR.
-              </p>
+              {credData?.mfaEnabled ? (
+                <>
+                  <p className="text-[11px] text-quirona-burgundy/80 leading-relaxed">
+                    Tu cuenta tiene activa la autenticación en dos pasos. Al iniciar sesión, se requiere el código dinámico de 6 dígitos generado por tu aplicación móvil.
+                  </p>
 
-              <button
-                type="button"
-                onClick={handleReset2FA}
-                disabled={savingCreds}
-                className="retro-btn bg-red-50 text-red-700 px-4 py-2 rounded-xl font-black text-xs border-2 border-red-300 hover:bg-red-100 flex items-center gap-2 disabled:opacity-50"
-              >
-                <ShieldAlert className="w-3.5 h-3.5" />
-                <span>Desvincular y Re-generar QR</span>
-              </button>
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={handleReset2FA}
+                      disabled={savingCreds}
+                      className="retro-btn bg-red-50 text-red-700 px-4 py-2 rounded-xl font-black text-xs border-2 border-red-300 hover:bg-red-100 flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <ShieldAlert className="w-3.5 h-3.5" />
+                      <span>{savingCreds ? 'Desvinculando...' : 'Desvincular / Desactivar Google Authenticator'}</span>
+                    </button>
+                  </div>
+                </>
+              ) : linkingMfa && mfaSetupData ? (
+                <div className="space-y-3 p-3 bg-quirona-bg rounded-xl border border-quirona-burgundy/30 animate-fadeIn">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-quirona-burgundy uppercase flex items-center gap-1">
+                      <QrCode className="w-4 h-4 text-quirona-burgundy" />
+                      <span>Escanear Código QR</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLinkingMfa(false);
+                        setMfaSetupData(null);
+                      }}
+                      className="text-quirona-burgundy/60 hover:text-quirona-burgundy p-1"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <p className="text-[11px] text-quirona-burgundy/75 leading-tight">
+                    Abre <strong>Google Authenticator</strong> o Authy en tu celular y escanea este código:
+                  </p>
+
+                  <div className="bg-white p-2.5 rounded-xl border-2 border-quirona-burgundy w-fit mx-auto retro-shadow-sm">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={mfaSetupData.qrCode}
+                      alt="Código QR Google Authenticator"
+                      className="w-36 h-36 block"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-quirona-burgundy/70 block">
+                      O escribe esta clave secreta manualmente:
+                    </span>
+                    <div className="flex items-center gap-1.5 bg-white px-2 py-1.5 rounded-lg border border-quirona-burgundy/30">
+                      <code className="text-[11px] font-mono font-bold text-quirona-burgundy tracking-wider flex-1 truncate">
+                        {mfaSetupData.secret}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={handleCopyMfaSecret}
+                        className="text-quirona-burgundy hover:text-quirona-burgundy-light p-1"
+                        title="Copiar clave secreta"
+                      >
+                        {copiedMfaSecret ? <Check className="w-3.5 h-3.5 text-green-700" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleConfirmMfaSetup} className="space-y-2 pt-1">
+                    <label className="block text-[10px] font-black text-quirona-burgundy uppercase">
+                      Código de 6 dígitos generado por la app:
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        maxLength={6}
+                        required
+                        placeholder="000000"
+                        value={mfaVerifyCode}
+                        onChange={(e) => setMfaVerifyCode(e.target.value.replace(/\D/g, ''))}
+                        className="flex-1 bg-white border-2 border-quirona-burgundy rounded-xl px-3 py-1.5 text-center text-sm font-black tracking-widest text-quirona-burgundy focus:outline-none"
+                      />
+                      <button
+                        type="submit"
+                        disabled={savingCreds || mfaVerifyCode.length !== 6}
+                        className="retro-btn bg-quirona-yellow text-quirona-burgundy px-3.5 py-1.5 rounded-xl font-black text-xs border-2 border-quirona-burgundy hover:bg-quirona-yellow-hover disabled:opacity-50"
+                      >
+                        {savingCreds ? 'Validando...' : 'Activar 2FA'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              ) : (
+                <>
+                  <p className="text-[11px] text-quirona-burgundy/80 leading-relaxed">
+                    Google Authenticator está actualmente <strong>desactivado</strong>. Puedes iniciar sesión directamente con tu correo y contraseña sin necesidad de código OTP.
+                  </p>
+
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={handleStartLinkingMfa}
+                      disabled={loadingQr}
+                      className="retro-btn bg-quirona-yellow text-quirona-burgundy px-4 py-2 rounded-xl font-black text-xs border-2 border-quirona-burgundy retro-shadow-sm hover:bg-quirona-yellow-hover flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <Smartphone className={`w-3.5 h-3.5 ${loadingQr ? 'animate-spin' : ''}`} />
+                      <span>{loadingQr ? 'Generando QR...' : 'Vincular Google Authenticator (Opcional)'}</span>
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="p-3 bg-quirona-bg rounded-xl border border-quirona-burgundy/20 space-y-1">
@@ -432,7 +621,7 @@ export default function ConfigSecuritySubTab() {
                 <span>Protocolo de Rescate Técnico Máster</span>
               </div>
               <p className="text-[10px] text-quirona-burgundy/75 leading-tight">
-                En caso de pérdida total de teléfono o extravío de claves, el sistema cuenta con un canal de rescate criptográfico en el backend administrado por el programador máster para restaurar el acceso sin exponer credenciales.
+                En caso de pérdida de teléfono o extravío de claves, el canal de rescate criptográfico en el login permite solicitar un código de acceso de emergencia para restaurar la cuenta.
               </p>
             </div>
           </div>

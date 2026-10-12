@@ -70,7 +70,9 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Credenciales actualizadas correctamente.',
+      message: reset2fa
+        ? 'Google Authenticator desvinculado con éxito. Ahora puedes acceder únicamente con correo y contraseña.'
+        : 'Credenciales actualizadas correctamente.',
       email: authData.adminEmail,
       mfaEnabled: authData.mfaEnabled,
     });
