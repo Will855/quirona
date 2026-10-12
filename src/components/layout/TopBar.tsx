@@ -59,7 +59,7 @@ export default function TopBar() {
           </Link>
 
           <a
-            href={`https://wa.me/${whatsappNumber}?text=Hola%20Quirona!%20Quisiera%20hacer%20una%20consulta`}
+            href={`https://wa.me/${whatsappNumber.replace(/\D/g, '')}?text=Hola%20Quirona!%20Quisiera%20hacer%20una%20consulta`}
             target="_blank"
             rel="noopener noreferrer"
             className="hidden sm:flex items-center gap-1 hover:text-quirona-yellow transition-colors"

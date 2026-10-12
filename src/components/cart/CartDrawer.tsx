@@ -91,7 +91,7 @@ export default function CartDrawer() {
                     {/* Imagen de prenda */}
                     <div className="relative w-20 h-24 rounded-lg overflow-hidden border border-quirona-burgundy bg-quirona-cream flex-shrink-0">
                       <Image
-                        src={item.productImage}
+                        src={item.productImage || '/images/placeholder.png'}
                         alt={item.productName}
                         fill
                         sizes="80px"

@@ -177,7 +177,8 @@ export default function CheckoutStepPayment({
         <button
           type="button"
           onClick={onBack}
-          className="text-xs font-extrabold text-quirona-burgundy underline hover:text-quirona-burgundy-light"
+          disabled={submittingOrder}
+          className="text-xs font-extrabold text-quirona-burgundy underline hover:text-quirona-burgundy-light disabled:opacity-50 disabled:cursor-not-allowed"
         >
           ← Volver a datos
         </button>

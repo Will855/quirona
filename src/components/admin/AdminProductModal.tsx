@@ -302,7 +302,7 @@ export default function AdminProductModal({
                     value={v.stock}
                     onChange={(e) => {
                       const updated = [...variants];
-                      updated[i].stock = parseInt(e.target.value) || 0;
+                      updated[i].stock = Math.max(0, parseInt(e.target.value) || 0);
                       setVariants(updated);
                     }}
                     className="w-full mt-1 bg-quirona-cream border border-quirona-burgundy rounded-lg px-2 py-1 text-xs font-extrabold text-quirona-burgundy"

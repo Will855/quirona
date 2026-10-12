@@ -58,7 +58,7 @@ export default function AdminProductsTable({
               </thead>
               <tbody className="divide-y divide-quirona-burgundy/15 font-medium">
                 {products.map((product) => {
-                  const totalStock = product.variants.reduce((acc, v) => acc + v.stock, 0);
+                  const totalStock = (product.variants || []).reduce((acc, v) => acc + v.stock, 0);
 
                   return (
                     <tr key={product.id} className="hover:bg-quirona-bg/40 transition-colors">
@@ -66,7 +66,7 @@ export default function AdminProductsTable({
                         <div className="flex items-center gap-3">
                           <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-quirona-burgundy bg-quirona-bg flex-shrink-0">
                             <Image
-                              src={product.images[0]}
+                              src={product.images?.[0] || '/images/placeholder.png'}
                               alt={product.name}
                               fill
                               sizes="48px"
@@ -90,7 +90,7 @@ export default function AdminProductsTable({
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          {product.variants.map((v) => (
+                          {(product.variants || []).map((v) => (
                             <span
                               key={v.id}
                               className={`text-[10px] font-bold px-2 py-0.5 rounded border ${

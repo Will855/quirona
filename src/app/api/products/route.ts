@@ -18,6 +18,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        { success: false, error: 'Cuerpo de la petición inválido.' },
+        { status: 400 }
+      );
+    }
+
     if (!body.name || !body.category || !body.basePriceUSD) {
       return NextResponse.json(
         { success: false, error: 'Nombre, categoría y precio base son obligatorios' },

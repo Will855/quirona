@@ -32,7 +32,7 @@ export default function CheckoutStepSuccess({
   onSaveReceipt,
   onClose,
 }: CheckoutStepSuccessProps) {
-  const activeWaNumber = whatsappNumber || '584121234567';
+  const activeWaNumber = (whatsappNumber || '584121234567').replace(/\D/g, '');
 
   // Construir mensaje codificado para WhatsApp
   const generateWhatsAppMessage = () => {

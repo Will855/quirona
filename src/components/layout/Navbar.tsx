@@ -55,7 +55,11 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-full">
           
           {/* Logo & Marca */}
-          <Link href="/" className="flex items-center gap-2 sm:gap-3 group shrink-0">
+          <Link
+            href="/"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="flex items-center gap-2 sm:gap-3 group shrink-0"
+          >
             <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-quirona-burgundy retro-shadow-sm group-hover:rotate-6 transition-transform shrink-0">
               <Image
                 src="/logo_quirona.jpeg"

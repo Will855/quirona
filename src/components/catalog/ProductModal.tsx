@@ -115,7 +115,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
                 )}
               </div>
 
-              {product.images.length > 1 && (
+              {(product.images && product.images.length > 1) && (
                 <div className="flex gap-2">
                   {product.images.map((img, idx) => (
                     <button
@@ -274,9 +274,9 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
 
                   <button
                     onClick={handleAddToCart}
-                    disabled={isOutOfStock}
+                    disabled={!currentVariant || currentVariant.stock <= 0}
                     className={`retro-btn flex-1 py-3 px-6 rounded-full font-black text-sm border-2 border-quirona-burgundy flex items-center justify-center gap-2 ${
-                      isOutOfStock
+                      !currentVariant || currentVariant.stock <= 0
                         ? 'bg-gray-300 text-gray-500 border-gray-400 cursor-not-allowed'
                         : addedAnimation
                         ? 'bg-green-500 text-white'
@@ -287,9 +287,9 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
                       <>
                         <Check className="w-5 h-5" /> ¡Agregado al Carrito!
                       </>
-                    ) : isOutOfStock ? (
+                    ) : (!currentVariant || currentVariant.stock <= 0) ? (
                       <>
-                        <AlertCircle className="w-5 h-5" /> Agotado en esta combinación
+                        <AlertCircle className="w-5 h-5" /> Agotado
                       </>
                     ) : (
                       <>

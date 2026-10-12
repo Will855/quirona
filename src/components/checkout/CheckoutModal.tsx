@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { X } from 'lucide-react';
 import { useCartStore } from '@/lib/store/useCartStore';
@@ -38,6 +38,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const [referenceNumber, setReferenceNumber] = useState('');
   const [receiptUploaded, setReceiptUploaded] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [submittingOrder, setSubmittingOrder] = useState(false);
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
@@ -54,6 +55,12 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
         }
       })
       .catch(() => {});
+
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
   }, []);
 
   if (!isOpen) return null;
@@ -65,8 +72,14 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     try {
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
         navigator.clipboard.writeText(text).catch(() => {});
+        if (copyTimeoutRef.current) {
+          clearTimeout(copyTimeoutRef.current);
+        }
         setCopiedField(fieldName);
-        setTimeout(() => setCopiedField(null), 2000);
+        copyTimeoutRef.current = setTimeout(() => {
+          setCopiedField(null);
+          copyTimeoutRef.current = null;
+        }, 2000);
       }
     } catch {
       // Fallback seguro si el navegador restringe el portapapeles
