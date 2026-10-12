@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { getAdminAuthData, saveAdminAuthData } from '@/lib/server/adminAuthStore';
 import { sendRescueCodeEmail } from '@/lib/server/email';
 
@@ -6,8 +7,8 @@ export async function POST(request: NextRequest) {
   try {
     const authData = getAdminAuthData();
 
-    // Generar código numérico de 6 dígitos
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generar código numérico de 6 dígitos con generador criptográfico seguro (CSPRNG)
+    const code = crypto.randomInt(100000, 1000000).toString();
     const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutos
 
     authData.recoveryOtp = {
