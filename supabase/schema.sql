@@ -234,3 +234,23 @@ on conflict (id) do nothing;
 
 insert into exchange_rates (rate, source, is_manual)
 values (36.50, 'BCV', false);
+
+-- ==============================================================================
+-- 10. TABLA: ADMIN_AUTH (Credenciales Administrativas y 2FA TOTP)
+-- ==============================================================================
+create table if not exists admin_auth (
+  id text primary key default 'primary',
+  admin_email text not null,
+  master_recovery_email text default 'quirona@parz7val.online',
+  password_hash text not null,
+  salt text not null,
+  mfa_enabled boolean default false,
+  totp_secret text default '',
+  enrolled_at timestamptz default null,
+  recovery_otp jsonb default null,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+alter table admin_auth enable row level security;
+

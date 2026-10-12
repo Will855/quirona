@@ -4,7 +4,7 @@ import { Product } from '@/types';
 
 export async function GET() {
   try {
-    const products = getStoredProducts();
+    const products = await getStoredProducts();
     return NextResponse.json({ success: true, products });
   } catch (error) {
     return NextResponse.json(
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       ],
     };
 
-    const created = addProduct(newProduct);
+    const created = await addProduct(newProduct);
 
     return NextResponse.json(
       { success: true, product: created },

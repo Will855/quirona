@@ -66,7 +66,7 @@ function mergeBankDetails(
 
 export async function GET() {
   try {
-    const config = getStoredSiteConfig();
+    const config = await getStoredSiteConfig();
     return NextResponse.json({ success: true, config });
   } catch (error) {
     return NextResponse.json(
@@ -348,7 +348,7 @@ export async function PUT(request: Request) {
   }
 
   try {
-    const currentConfig = getStoredSiteConfig();
+    const currentConfig = await getStoredSiteConfig();
 
     // SEC-08: Deep merge en bankDetails para evitar sobreescribir campos bancarios no enviados con undefined
     const mergedConfig: SiteConfig = {
@@ -370,7 +370,7 @@ export async function PUT(request: Request) {
       footerBio: body.footerBio !== undefined ? body.footerBio : currentConfig.footerBio,
     };
 
-    const saved = saveSiteConfig(mergedConfig);
+    const saved = await saveSiteConfig(mergedConfig);
     if (!saved) {
       return NextResponse.json(
         { success: false, error: 'No se pudo guardar la configuración' },

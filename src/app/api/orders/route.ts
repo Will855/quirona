@@ -11,7 +11,7 @@ import { Order } from '@/types';
 
 export async function GET() {
   try {
-    const orders = getStoredOrders();
+    const orders = await getStoredOrders();
     return NextResponse.json({ success: true, orders });
   } catch (error) {
     return NextResponse.json(
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       createdAt: body.createdAt || new Date().toISOString(),
     };
 
-    const savedOrder = createOrderRecord(newOrder);
+    const savedOrder = await createOrderRecord(newOrder);
 
     // 1. Notificación asíncrona a Telegram para el dueño
     notifyNewOrder(savedOrder).catch((err) => {
@@ -60,16 +60,18 @@ export async function POST(request: NextRequest) {
     });
 
     // 2. Notificación asíncrona por Correo (Resend)
-    const authData = getAdminAuthData();
-    const siteConfig = getStoredSiteConfig();
+    const authData = await getAdminAuthData();
+    const siteConfig = await getStoredSiteConfig();
 
-    // Correo al DUEÑO (mismo contenido que Telegram)
-    sendOrderNotificationToAdmin({
-      adminEmail: authData.adminEmail,
-      order: savedOrder,
-    }).catch((err) => {
-      console.error('[Orders API] Error al enviar correo al admin:', err);
-    });
+    // Correo al DUEÑO si tiene cuenta registrada
+    if (authData?.adminEmail) {
+      sendOrderNotificationToAdmin({
+        adminEmail: authData.adminEmail,
+        order: savedOrder,
+      }).catch((err) => {
+        console.error('[Orders API] Error al enviar correo al admin:', err);
+      });
+    }
 
     // Correo al CLIENTE (confirmación de compra con datos de pago)
     sendOrderConfirmationToCustomer({

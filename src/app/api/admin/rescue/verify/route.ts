@@ -5,9 +5,9 @@ export async function POST(request: NextRequest) {
   try {
     const { rescueCode } = await request.json();
 
-    const authData = getAdminAuthData();
+    const authData = await getAdminAuthData();
 
-    if (!authData.recoveryOtp) {
+    if (!authData || !authData.recoveryOtp) {
       return NextResponse.json(
         { success: false, error: 'No hay ninguna solicitud de rescate activa. Solicita un código primero.' },
         { status: 400 }
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     if (Date.now() > authData.recoveryOtp.expiresAt) {
       authData.recoveryOtp = null;
-      saveAdminAuthData(authData);
+      await saveAdminAuthData(authData);
       return NextResponse.json(
         { success: false, error: 'El código de rescate ha expirado. Por favor solicita uno nuevo.' },
         { status: 400 }
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     authData.totpSecret = '';
     authData.recoveryOtp = null;
     authData.enrolledAt = null;
-    saveAdminAuthData(authData);
+    await saveAdminAuthData(authData);
 
     const response = NextResponse.json({
       success: true,

@@ -6,9 +6,9 @@ export async function POST(request: NextRequest) {
   try {
     const { totpCode } = await request.json();
 
-    const authData = getAdminAuthData();
+    const authData = await getAdminAuthData();
 
-    if (!authData.totpSecret) {
+    if (!authData || !authData.totpSecret) {
       return NextResponse.json(
         { success: false, error: 'No hay ninguna configuración MFA pendiente.' },
         { status: 400 }
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     // Activar 2FA de forma permanente
     authData.mfaEnabled = true;
     authData.enrolledAt = new Date().toISOString();
-    saveAdminAuthData(authData);
+    await saveAdminAuthData(authData);
 
     const response = NextResponse.json({
       success: true,

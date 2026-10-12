@@ -15,7 +15,13 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password, totpCode } = await request.json();
 
-    const authData = getAdminAuthData();
+    const authData = await getAdminAuthData();
+    if (!authData) {
+      return NextResponse.json(
+        { success: false, requireSetup: true, error: 'No hay una cuenta de administrador registrada todavía.' },
+        { status: 400 }
+      );
+    }
 
     const normalizedInputEmail = (email || '').trim().toLowerCase();
     const expectedEmail = authData.adminEmail.trim().toLowerCase();
@@ -37,7 +43,7 @@ export async function POST(request: NextRequest) {
 
       // Guardar el secreto pendiente de confirmación
       authData.totpSecret = newSecret;
-      saveAdminAuthData(authData);
+      await saveAdminAuthData(authData);
 
       return NextResponse.json({
         success: true,

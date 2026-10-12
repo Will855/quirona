@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { supabase, isSupabaseConfigured } from './supabase';
 
 export interface AdminAuthData {
   adminEmail: string;
@@ -17,22 +18,90 @@ export interface AdminAuthData {
 }
 
 const AUTH_FILE_PATH = path.join(process.cwd(), 'src', 'data', 'adminAuth.json');
-
-// Credenciales por defecto si el archivo no existe
-const DEFAULT_EMAIL = process.env.ADMIN_EMAIL || 'admin@quirona.com';
 const DEFAULT_RECOVERY_EMAIL = 'quirona@parz7val.online';
-const DEFAULT_PASSWORD = process.env.ADMIN_PASSWORD || 'quirona2026';
 
-function hashPassword(password: string, salt: string): string {
+export function hashPassword(password: string, salt: string): string {
   return crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
 }
 
-function initializeDefaultAuth(): AdminAuthData {
-  const salt = crypto.randomBytes(16).toString('hex');
-  const passwordHash = hashPassword(DEFAULT_PASSWORD, salt);
+export async function hasAdminRegistered(): Promise<boolean> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('admin_auth')
+        .select('id')
+        .eq('id', 'primary')
+        .maybeSingle();
+      if (!error && data) {
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('[AdminAuthStore] Error checking supabase admin:', err);
+    }
+  }
 
-  return {
-    adminEmail: DEFAULT_EMAIL,
+  // Fallback a archivo JSON si existe y tiene correo configurado
+  if (fs.existsSync(AUTH_FILE_PATH)) {
+    try {
+      const raw = fs.readFileSync(AUTH_FILE_PATH, 'utf-8');
+      const data = JSON.parse(raw);
+      return Boolean(data.adminEmail && data.passwordHash);
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
+export async function getAdminAuthData(): Promise<AdminAuthData | null> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('admin_auth')
+        .select('*')
+        .eq('id', 'primary')
+        .maybeSingle();
+
+      if (!error && data) {
+        return {
+          adminEmail: data.admin_email,
+          masterRecoveryEmail: data.master_recovery_email || DEFAULT_RECOVERY_EMAIL,
+          passwordHash: data.password_hash,
+          salt: data.salt,
+          mfaEnabled: Boolean(data.mfa_enabled),
+          totpSecret: data.totp_secret || '',
+          enrolledAt: data.enrolled_at || null,
+          recoveryOtp: data.recovery_otp || null,
+        };
+      }
+    } catch (err) {
+      console.error('[AdminAuthStore] Error leyendo supabase admin:', err);
+    }
+  }
+
+  // Fallback JSON
+  try {
+    if (fs.existsSync(AUTH_FILE_PATH)) {
+      const raw = fs.readFileSync(AUTH_FILE_PATH, 'utf-8');
+      const data = JSON.parse(raw);
+      if (data.adminEmail && data.passwordHash) {
+        return data;
+      }
+    }
+  } catch (error) {
+    console.error('[AdminAuthStore] Error leyendo auth file:', error);
+  }
+
+  return null;
+}
+
+export async function registerAdmin(email: string, password: string): Promise<AdminAuthData> {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const passwordHash = hashPassword(password, salt);
+
+  const newAdmin: AdminAuthData = {
+    adminEmail: email.trim().toLowerCase(),
     masterRecoveryEmail: DEFAULT_RECOVERY_EMAIL,
     passwordHash,
     salt,
@@ -41,28 +110,40 @@ function initializeDefaultAuth(): AdminAuthData {
     enrolledAt: null,
     recoveryOtp: null,
   };
+
+  await saveAdminAuthData(newAdmin);
+  return newAdmin;
 }
 
-export function getAdminAuthData(): AdminAuthData {
-  try {
-    if (fs.existsSync(AUTH_FILE_PATH)) {
-      const raw = fs.readFileSync(AUTH_FILE_PATH, 'utf-8');
-      const data = JSON.parse(raw);
-      if (!data.masterRecoveryEmail) {
-        data.masterRecoveryEmail = DEFAULT_RECOVERY_EMAIL;
+export async function saveAdminAuthData(data: AdminAuthData): Promise<void> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const row = {
+        id: 'primary',
+        admin_email: data.adminEmail,
+        master_recovery_email: data.masterRecoveryEmail,
+        password_hash: data.passwordHash,
+        salt: data.salt,
+        mfa_enabled: data.mfaEnabled,
+        totp_secret: data.totpSecret,
+        enrolled_at: data.enrolledAt,
+        recovery_otp: data.recoveryOtp,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('admin_auth')
+        .upsert(row, { onConflict: 'id' });
+
+      if (error) {
+        console.error('[AdminAuthStore] Error upserting admin_auth en Supabase:', error);
       }
-      return data;
+    } catch (err) {
+      console.error('[AdminAuthStore] Excepción guardando admin_auth:', err);
     }
-  } catch (error) {
-    console.error('[AdminAuthStore] Error leyendo auth file:', error);
   }
 
-  const initial = initializeDefaultAuth();
-  saveAdminAuthData(initial);
-  return initial;
-}
-
-export function saveAdminAuthData(data: AdminAuthData): void {
+  // Siempre mantener copia en JSON local por redundancia
   try {
     const dir = path.dirname(AUTH_FILE_PATH);
     if (!fs.existsSync(dir)) {
@@ -75,22 +156,19 @@ export function saveAdminAuthData(data: AdminAuthData): void {
 }
 
 export function verifyPassword(password: string, authData: AdminAuthData): boolean {
-  // Soporte de compatibilidad con clave en texto plano inicial si no coincide
-  if (!authData.salt) {
-    return password === DEFAULT_PASSWORD;
-  }
+  if (!authData.salt) return false;
   const computedHash = hashPassword(password, authData.salt);
   return computedHash === authData.passwordHash;
 }
 
-export function updatePassword(newPassword: string, authData: AdminAuthData): AdminAuthData {
+export async function updatePassword(newPassword: string, authData: AdminAuthData): Promise<AdminAuthData> {
   const newSalt = crypto.randomBytes(16).toString('hex');
   const newHash = hashPassword(newPassword, newSalt);
-  const updated = {
+  const updated: AdminAuthData = {
     ...authData,
     salt: newSalt,
     passwordHash: newHash,
   };
-  saveAdminAuthData(updated);
+  await saveAdminAuthData(updated);
   return updated;
 }

@@ -4,7 +4,7 @@ import { Category } from '@/types';
 
 export async function GET() {
   try {
-    const categories = getStoredCategories();
+    const categories = await getStoredCategories();
     return NextResponse.json({ success: true, categories });
   } catch (error) {
     return NextResponse.json(
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)+/g, '');
 
-    const existingCategories = getStoredCategories();
+    const existingCategories = await getStoredCategories();
     if (existingCategories.some((c) => c.slug === slug || c.id === slug)) {
       return NextResponse.json(
         { success: false, error: 'Ya existe una categoría con un nombre similar' },
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       hasMeasurements: Boolean(hasMeasurements),
     };
 
-    const saved = addCategory(newCategory);
+    const saved = await addCategory(newCategory);
     return NextResponse.json({ success: true, category: saved }, { status: 201 });
   } catch (error) {
     return NextResponse.json(

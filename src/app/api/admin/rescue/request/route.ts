@@ -5,7 +5,13 @@ import { sendRescueCodeEmail } from '@/lib/server/email';
 
 export async function POST(request: NextRequest) {
   try {
-    const authData = getAdminAuthData();
+    const authData = await getAdminAuthData();
+    if (!authData) {
+      return NextResponse.json(
+        { success: false, error: 'No hay cuenta de administrador configurada.' },
+        { status: 400 }
+      );
+    }
 
     // Generar código numérico de 6 dígitos con generador criptográfico seguro (CSPRNG)
     const code = crypto.randomInt(100000, 1000000).toString();
@@ -15,7 +21,7 @@ export async function POST(request: NextRequest) {
       code,
       expiresAt,
     };
-    saveAdminAuthData(authData);
+    await saveAdminAuthData(authData);
 
     const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'Desconocida';
 

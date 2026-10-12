@@ -9,7 +9,7 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    const updated = updateProduct(id, body);
+    const updated = await updateProduct(id, body);
     if (!updated) {
       return NextResponse.json(
         { success: false, error: 'Producto no encontrado' },
@@ -32,7 +32,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const deleted = deleteProduct(id);
+    const deleted = await deleteProduct(id);
     if (!deleted) {
       return NextResponse.json(
         { success: false, error: 'Producto no encontrado' },

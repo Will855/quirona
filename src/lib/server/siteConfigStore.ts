@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { SiteConfig } from '@/types';
+import { supabase, isSupabaseConfigured } from './supabase';
 
 export const DEFAULT_SITE_CONFIG: SiteConfig = {
   storeName: 'Quirona Store',
@@ -57,7 +58,42 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
 
 const DATA_FILE_PATH = path.join(process.cwd(), 'src', 'data', 'siteConfig.json');
 
-export function getStoredSiteConfig(): SiteConfig {
+export async function getStoredSiteConfig(): Promise<SiteConfig> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('site_config')
+        .select('config')
+        .eq('id', 'primary')
+        .maybeSingle();
+
+      if (!error && data?.config) {
+        return {
+          ...DEFAULT_SITE_CONFIG,
+          ...data.config,
+          bankDetails: {
+            ...DEFAULT_SITE_CONFIG.bankDetails,
+            ...(data.config.bankDetails || {}),
+          },
+          hero: {
+            ...DEFAULT_SITE_CONFIG.hero,
+            ...(data.config.hero || {}),
+          },
+          benefits: {
+            ...DEFAULT_SITE_CONFIG.benefits,
+            ...(data.config.benefits || {}),
+          },
+          sizeBanner: {
+            ...DEFAULT_SITE_CONFIG.sizeBanner,
+            ...(data.config.sizeBanner || {}),
+          },
+        };
+      }
+    } catch (err) {
+      console.error('[SiteConfigStore] Excepción consultando Supabase:', err);
+    }
+  }
+
   try {
     if (!fs.existsSync(DATA_FILE_PATH)) {
       fs.writeFileSync(DATA_FILE_PATH, JSON.stringify(DEFAULT_SITE_CONFIG, null, 2), 'utf-8');
@@ -65,7 +101,6 @@ export function getStoredSiteConfig(): SiteConfig {
     }
     const data = fs.readFileSync(DATA_FILE_PATH, 'utf-8');
     const parsed = JSON.parse(data) as Partial<SiteConfig>;
-    // Merge con valores por defecto para asegurar que no falten claves
     return {
       ...DEFAULT_SITE_CONFIG,
       ...parsed,
@@ -92,7 +127,22 @@ export function getStoredSiteConfig(): SiteConfig {
   }
 }
 
-export function saveSiteConfig(config: SiteConfig): boolean {
+export async function saveSiteConfig(config: SiteConfig): Promise<boolean> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { error } = await supabase.from('site_config').upsert({
+        id: 'primary',
+        config,
+        updated_at: new Date().toISOString(),
+      });
+      if (error) {
+        console.error('[SiteConfigStore] Error upserting site_config en Supabase:', error);
+      }
+    } catch (err) {
+      console.error('[SiteConfigStore] Excepción guardando site_config:', err);
+    }
+  }
+
   try {
     fs.writeFileSync(DATA_FILE_PATH, JSON.stringify(config, null, 2), 'utf-8');
     return true;

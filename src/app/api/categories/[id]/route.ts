@@ -11,7 +11,7 @@ export async function PUT(request: Request, context: RouteContext) {
     const { id } = await context.params;
     const body = await request.json();
 
-    const updated = updateCategory(id, body);
+    const updated = await updateCategory(id, body);
     if (!updated) {
       return NextResponse.json(
         { success: false, error: 'Categoría no encontrada' },
@@ -33,7 +33,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
     const { id } = await context.params;
 
     // Verificar si hay productos asignados a esta categoría
-    const products = getStoredProducts();
+    const products = await getStoredProducts();
     const assignedProducts = products.filter((p) => p.category === id);
 
     if (assignedProducts.length > 0) {
@@ -46,7 +46,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
       );
     }
 
-    const deleted = deleteCategory(id);
+    const deleted = await deleteCategory(id);
     if (!deleted) {
       return NextResponse.json(
         { success: false, error: 'Categoría no encontrada' },

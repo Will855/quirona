@@ -12,7 +12,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 
-  const authData = getAdminAuthData();
+  const authData = await getAdminAuthData();
+  if (!authData) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   return NextResponse.json({
     success: true,
     email: authData.adminEmail,
@@ -30,7 +34,10 @@ export async function PUT(request: NextRequest) {
   try {
     const { newEmail, currentPassword, newPassword, reset2fa } = await request.json();
 
-    const authData = getAdminAuthData();
+    const authData = await getAdminAuthData();
+    if (!authData) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
 
     // 1. Si se quiere cambiar correo o contraseña, exigir la contraseña actual
     if (newPassword || newEmail) {
@@ -49,7 +56,7 @@ export async function PUT(request: NextRequest) {
 
     // 3. Actualizar contraseña si se proporcionó
     if (newPassword && typeof newPassword === 'string' && newPassword.length >= 6) {
-      updatePassword(newPassword, authData);
+      await updatePassword(newPassword, authData);
     }
 
     // 4. Resetear 2FA si se solicitó voluntariamente desde el panel
@@ -59,7 +66,7 @@ export async function PUT(request: NextRequest) {
       authData.enrolledAt = null;
     }
 
-    saveAdminAuthData(authData);
+    await saveAdminAuthData(authData);
 
     return NextResponse.json({
       success: true,
