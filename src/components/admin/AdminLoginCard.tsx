@@ -283,7 +283,7 @@ export default function AdminLoginCard({ onLoginSuccess }: AdminLoginCardProps) 
               </div>
 
               <span className="text-[10px] font-black uppercase tracking-wider text-quirona-burgundy bg-quirona-yellow px-2.5 py-0.5 rounded-full border border-quirona-burgundy inline-block">
-                Setup Inicial Sandbox / Tienda
+                Setup Inicial de la Tienda
               </span>
 
               <h1 className="text-2xl sm:text-3xl font-black text-quirona-burgundy">
