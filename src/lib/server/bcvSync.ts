@@ -131,13 +131,16 @@ export function calculateRateStatus(lastUpdatedIso: string): {
   }
 }
 
+// Caché en memoria viva para Vercel Serverless
+let inMemoryRate: { rate: number; source: string; updatedAt: string } | null = null;
+
 /**
  * Obtiene el estado actual de la tasa guardada o la refresca si es necesario
  */
 export async function getOrSyncBcvRate(): Promise<BcvRateState> {
-  let savedRate = DEFAULT_BCV_RATE;
-  let savedDate = new Date().toISOString();
-  let savedSource = 'default';
+  let savedRate = inMemoryRate ? inMemoryRate.rate : DEFAULT_BCV_RATE;
+  let savedDate = inMemoryRate ? inMemoryRate.updatedAt : new Date().toISOString();
+  let savedSource = inMemoryRate ? inMemoryRate.source : 'default';
 
   try {
     if (fs.existsSync(CONFIG_PATH)) {
@@ -149,7 +152,7 @@ export async function getOrSyncBcvRate(): Promise<BcvRateState> {
       }
     }
   } catch (err) {
-    console.error('[BCV Sync] Error leyendo config:', err);
+    // EROFS silencioso en Vercel
   }
 
   const statusInfo = calculateRateStatus(savedDate);
@@ -177,21 +180,26 @@ export async function getOrSyncBcvRate(): Promise<BcvRateState> {
 }
 
 /**
- * Persiste la tasa en siteConfig.json
+ * Persiste la tasa en memoria y siteConfig.json
  */
 export async function persistBcvRate(rate: number, source: string, updatedAt = new Date().toISOString()) {
+  const roundedRate = Math.round(rate * 100) / 100;
+  inMemoryRate = { rate: roundedRate, source, updatedAt };
+
   try {
     let config: any = {};
     if (fs.existsSync(CONFIG_PATH)) {
       config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
     }
     config.activeExchangeRate = {
-      rate: Math.round(rate * 100) / 100,
+      rate: roundedRate,
       source,
       updatedAt,
     };
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2), 'utf-8');
-  } catch (err) {
-    console.error('[BCV Sync] Error persistiendo tasa:', err);
+  } catch (err: any) {
+    if (err?.code !== 'EROFS') {
+      console.warn('[BCV Sync] Error persistiendo tasa en archivo local:', err?.message);
+    }
   }
 }

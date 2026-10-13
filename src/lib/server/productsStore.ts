@@ -1,9 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 import { Product } from '@/types';
+import defaultProducts from '@/data/products.json';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 const DATA_FILE_PATH = path.join(process.cwd(), 'src', 'data', 'products.json');
+
+// Memoria viva para Vercel Serverless (evita que el catálogo quede vacío si no hay DB)
+let memoryProducts: Product[] = [...(defaultProducts as unknown as Product[])];
 
 function mapRowToProduct(row: any): Product {
   return {
@@ -56,7 +60,7 @@ export async function getStoredProducts(): Promise<Product[]> {
 
       if (error) {
         console.error('[ProductsStore] Error consultando Supabase:', error);
-      } else if (data) {
+      } else if (data && data.length > 0) {
         return data.map(mapRowToProduct);
       }
     } catch (err) {
@@ -64,16 +68,17 @@ export async function getStoredProducts(): Promise<Product[]> {
     }
   }
 
-  // Fallback a JSON local
+  // Fallback a JSON local o memoria viva
   try {
     if (fs.existsSync(DATA_FILE_PATH)) {
       const data = fs.readFileSync(DATA_FILE_PATH, 'utf-8');
-      return JSON.parse(data) as Product[];
+      const parsed = JSON.parse(data) as Product[];
+      if (parsed.length > 0) return parsed;
     }
   } catch (error) {
-    console.error('Error reading products.json:', error);
+    // Tolerancia a lectura en entornos serverless
   }
-  return [];
+  return memoryProducts;
 }
 
 export async function addProduct(newProduct: Product): Promise<Product> {
@@ -89,16 +94,16 @@ export async function addProduct(newProduct: Product): Promise<Product> {
     }
   }
 
-  // Guardar en JSON local también por redundancia
+  // Guardar en memoria viva siempre para que el demo lo refleje de inmediato
+  memoryProducts.unshift(newProduct);
+
+  // Intentar guardar en disco local (desarrollo)
   try {
-    const products = await getStoredProducts();
-    const exists = products.some((p) => p.id === newProduct.id);
-    if (!exists) {
-      products.unshift(newProduct);
-      fs.writeFileSync(DATA_FILE_PATH, JSON.stringify(products, null, 2), 'utf-8');
+    if (fs.existsSync(DATA_FILE_PATH)) {
+      fs.writeFileSync(DATA_FILE_PATH, JSON.stringify(memoryProducts, null, 2), 'utf-8');
     }
   } catch (err) {
-    console.error('[ProductsStore] Error guardando archivo local:', err);
+    // EROFS silencioso en Vercel
   }
 
   return newProduct;

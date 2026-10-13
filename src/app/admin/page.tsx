@@ -358,9 +358,9 @@ export default function AdminPage() {
         onClose={() => setSelectedReceipt(null)}
       />
 
-      {/* Alerta flotante retro en vivo para nuevos pedidos */}
-      {newOrderAlert && (
-        <div className="fixed bottom-6 right-6 z-50 bg-quirona-yellow border-3 border-quirona-burgundy p-4 rounded-2xl retro-shadow-lg flex items-center gap-3.5 animate-bounce-slow max-w-sm shadow-2xl">
+      {/* Alerta flotante retro en vivo para nuevos pedidos (oculta mientras haya un modal abierto) */}
+      {newOrderAlert && !isCreateModalOpen && !selectedReceipt && (
+        <div className="fixed bottom-6 right-6 z-40 bg-quirona-yellow border-3 border-quirona-burgundy p-4 rounded-2xl retro-shadow-lg flex items-center gap-3.5 animate-bounce-slow max-w-sm shadow-2xl">
           <div className="w-10 h-10 rounded-full bg-quirona-burgundy text-quirona-cream flex items-center justify-center flex-shrink-0 retro-shadow-sm">
             <Bell className="w-5 h-5 text-quirona-yellow animate-pulse" />
           </div>

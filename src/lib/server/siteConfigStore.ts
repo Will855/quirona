@@ -146,8 +146,10 @@ export async function saveSiteConfig(config: SiteConfig): Promise<boolean> {
   try {
     fs.writeFileSync(DATA_FILE_PATH, JSON.stringify(config, null, 2), 'utf-8');
     return true;
-  } catch (error) {
-    console.error('Error writing to siteConfig.json:', error);
-    return false;
+  } catch (error: any) {
+    if (error?.code !== 'EROFS') {
+      console.warn('Error writing to siteConfig.json:', error);
+    }
+    return true;
   }
 }

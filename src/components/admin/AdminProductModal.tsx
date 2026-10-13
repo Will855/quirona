@@ -291,7 +291,7 @@ export default function AdminProductModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-quirona-burgundy/60 backdrop-blur-sm animate-fadeIn">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-quirona-burgundy/60 backdrop-blur-sm animate-fadeIn">
       <div className="bg-quirona-cream w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl border-3 border-quirona-burgundy retro-shadow-lg overflow-hidden relative">
         {/* Encabezado Fijo */}
         <div className="px-5 sm:px-6 py-4 border-b-2 border-quirona-burgundy/15 flex items-center justify-between bg-quirona-cream flex-shrink-0">
