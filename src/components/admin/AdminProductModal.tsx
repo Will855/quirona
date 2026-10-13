@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Upload, Ruler, CheckCircle2, Plus, Trash2 } from 'lucide-react';
+import { X, Upload, Ruler, CheckCircle2, Plus, Trash2, Image as ImageIcon, Star } from 'lucide-react';
+import { compressImage } from '@/lib/imageCompression';
 import { Category, ClothingSize, ProductVariant, SizeMeasurement } from '@/types';
 
 interface AdminProductModalProps {
@@ -27,8 +28,10 @@ export default function AdminProductModal({
   const [description, setDescription] = useState('');
   const [material, setMaterial] = useState('');
   const [careInstructions, setCareInstructions] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [manualUrlInput, setManualUrlInput] = useState('');
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadProgressText, setUploadProgressText] = useState('');
   const [footwearUnit, setFootwearUnit] = useState<'in' | 'cm'>('in');
 
   // Variantes
@@ -144,31 +147,72 @@ export default function AdminProductModal({
     setMeasurements(measurements.filter((m) => m.size !== targetSize));
   };
 
-  // Subir imagen local
+  // Agregar URL manual
+  const handleAddManualUrl = () => {
+    if (!manualUrlInput.trim()) return;
+    setImageUrls((prev) => [...prev, manualUrlInput.trim()]);
+    setManualUrlInput('');
+  };
+
+  // Subir imágenes en lote con compresión WebP en el navegador
   const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
     try {
-      setUploadingImage(true);
-      const formData = new FormData();
-      formData.append('file', file);
+      setUploadingImages(true);
+      const uploadedUrls: string[] = [];
 
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.success) {
-        setImageUrl(data.url);
-      } else {
-        alert('Error al subir imagen: ' + data.error);
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setUploadProgressText(`Comprimiendo y subiendo ${i + 1} de ${files.length}...`);
+
+        // 1. Compresión automática WebP en el navegador (redimensiona a máx 1600px y reduce peso 85%)
+        const compressedFile = await compressImage(file, 1600, 0.85);
+
+        // 2. Subida a Supabase Storage
+        const formData = new FormData();
+        formData.append('file', compressedFile);
+
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+        if (data.success && data.url) {
+          uploadedUrls.push(data.url);
+        } else {
+          console.error('Error subiendo imagen:', data.error);
+        }
       }
-    } catch {
-      alert('Error en la subida de imagen');
+
+      if (uploadedUrls.length > 0) {
+        setImageUrls((prev) => [...prev, ...uploadedUrls]);
+      } else {
+        alert('No se pudieron subir las imágenes seleccionadas.');
+      }
+    } catch (err: any) {
+      alert('Error en la subida de imágenes: ' + err.message);
     } finally {
-      setUploadingImage(false);
+      setUploadingImages(false);
+      setUploadProgressText('');
+      e.target.value = '';
     }
+  };
+
+  // Eliminar una imagen de la galería
+  const handleRemoveImage = (index: number) => {
+    setImageUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Establecer una imagen como portada principal (índice 0)
+  const handleSetPrimaryImage = (index: number) => {
+    if (index === 0) return;
+    setImageUrls((prev) => {
+      const copy = [...prev];
+      const [selected] = copy.splice(index, 1);
+      return [selected, ...copy];
+    });
   };
 
   // Crear producto
@@ -176,7 +220,7 @@ export default function AdminProductModal({
     e.preventDefault();
     if (!name || !basePriceUSD) return;
 
-    if (!imageUrl.trim()) {
+    if (imageUrls.length === 0) {
       alert('Debes subir o indicar al menos una imagen de la prenda antes de publicarla.');
       return;
     }
@@ -208,7 +252,7 @@ export default function AdminProductModal({
         description,
         material: material.trim() || '100% Algodón',
         careInstructions: careInstructions.trim() || 'Lavar con agua fría.',
-        images: [imageUrl.trim()],
+        images: imageUrls,
         variants: finalVariants,
         measurements: finalMeasurements,
         isNew: true,
@@ -229,7 +273,8 @@ export default function AdminProductModal({
         setDescription('');
         setMaterial('');
         setCareInstructions('');
-        setImageUrl('');
+        setImageUrls([]);
+        setManualUrlInput('');
         applyCategoryDefaults(category);
         onProductCreated();
         onClose();
@@ -374,32 +419,107 @@ export default function AdminProductModal({
               </div>
             </div>
 
-            {/* Subida de Imagen */}
-            <div>
-              <label className="block text-xs font-bold text-quirona-burgundy uppercase mb-1">
-                Foto de la Prenda
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="URL de la imagen o sube un archivo →"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  className="flex-1 bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-medium text-quirona-burgundy focus:outline-none"
-                />
+            {/* Subida de Imágenes en Lote */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-black text-quirona-burgundy uppercase">
+                  Galería de Fotos ({imageUrls.length} {imageUrls.length === 1 ? 'foto' : 'fotos'}) *
+                </label>
+                <span className="text-[10px] text-quirona-burgundy/60 font-semibold">
+                  Compresión WebP automática • Primera foto = Portada
+                </span>
+              </div>
 
-                <label className="retro-btn cursor-pointer bg-quirona-yellow text-quirona-burgundy px-4 py-2 rounded-xl font-extrabold text-xs border-2 border-quirona-burgundy flex items-center gap-1.5 hover:bg-quirona-yellow-hover">
+              {/* Barra de Subida y URL manual */}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex-1 flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Pega una URL externa..."
+                    value={manualUrlInput}
+                    onChange={(e) => setManualUrlInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddManualUrl();
+                      }
+                    }}
+                    className="flex-1 bg-quirona-bg border-2 border-quirona-burgundy rounded-xl px-3.5 py-2 text-xs font-medium text-quirona-burgundy focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddManualUrl}
+                    disabled={!manualUrlInput.trim()}
+                    className="px-3 py-2 bg-quirona-bg border-2 border-quirona-burgundy rounded-xl text-xs font-bold text-quirona-burgundy hover:bg-quirona-yellow disabled:opacity-40 transition-colors"
+                  >
+                    Agregar
+                  </button>
+                </div>
+
+                {/* Botón de Selección en Lote */}
+                <label className="retro-btn cursor-pointer bg-quirona-yellow text-quirona-burgundy px-4 py-2 rounded-xl font-extrabold text-xs border-2 border-quirona-burgundy flex items-center justify-center gap-1.5 hover:bg-quirona-yellow-hover">
                   <Upload className="w-4 h-4" />
-                  <span>{uploadingImage ? 'Subiendo...' : 'Subir'}</span>
+                  <span>{uploadingImages ? (uploadProgressText || 'Subiendo...') : 'Subir Fotos en Lote'}</span>
                   <input
                     type="file"
+                    multiple
                     accept="image/*"
                     className="hidden"
                     onChange={handleImageFileUpload}
-                    disabled={uploadingImage}
+                    disabled={uploadingImages}
                   />
                 </label>
               </div>
+
+              {/* Cuadrícula de fotos subidas con miniaturas, portada y eliminación */}
+              {imageUrls.length > 0 && (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 pt-2">
+                  {imageUrls.map((url, idx) => (
+                    <div
+                      key={idx}
+                      className={`relative aspect-square rounded-xl overflow-hidden border-2 bg-quirona-bg group shadow-sm ${
+                        idx === 0
+                          ? 'border-quirona-burgundy ring-2 ring-quirona-yellow'
+                          : 'border-quirona-burgundy/40 hover:border-quirona-burgundy'
+                      }`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={url}
+                        alt={`Foto ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+
+                      {/* Badge de Portada */}
+                      {idx === 0 ? (
+                        <span className="absolute top-1.5 left-1.5 bg-quirona-yellow text-quirona-burgundy text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-quirona-burgundy shadow-sm flex items-center gap-1">
+                          <Star className="w-2.5 h-2.5 fill-quirona-burgundy text-quirona-burgundy" />
+                          Portada
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSetPrimaryImage(idx)}
+                          className="absolute top-1.5 left-1.5 bg-black/70 hover:bg-quirona-burgundy text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Hacer portada principal"
+                        >
+                          Portada
+                        </button>
+                      )}
+
+                      {/* Botón de Eliminar Foto */}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(idx)}
+                        className="absolute top-1.5 right-1.5 p-1 bg-red-600/90 hover:bg-red-700 text-white rounded-md opacity-90 group-hover:opacity-100 transition-opacity shadow-sm"
+                        title="Eliminar foto"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Variantes de Calzado: Talla, Medida Plantilla y Stock */}
@@ -756,10 +876,10 @@ export default function AdminProductModal({
             </button>
             <button
               type="submit"
-              disabled={submitting || uploadingImage || !imageUrl.trim()}
+              disabled={submitting || uploadingImages || imageUrls.length === 0}
               className="retro-btn bg-quirona-yellow text-quirona-burgundy px-6 py-2.5 rounded-full font-black text-xs border-2 border-quirona-burgundy retro-shadow disabled:opacity-50 hover:bg-quirona-yellow-hover"
             >
-              {uploadingImage ? 'Subiendo imagen...' : submitting ? 'Guardando...' : 'Publicar Producto'}
+              {uploadingImages ? (uploadProgressText || 'Subiendo imágenes...') : submitting ? 'Guardando...' : 'Publicar Producto'}
             </button>
           </div>
         </form>
